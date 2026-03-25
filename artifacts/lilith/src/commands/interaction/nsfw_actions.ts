@@ -2,27 +2,32 @@ import { SlashCommandBuilder, CommandInteraction, Client, PermissionFlagsBits, E
 import { getRelation, updateRelation, getGuildSettings, blacklistUser } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
-async function fetchGif(query: string, fallbackQuery?: string): Promise<string | null> {
-  const tryFetch = async (q: string): Promise<string | null> => {
+type HentaiCategory = "fuck" | "blowjob" | "anal" | "solo" | "cum" | "yuri";
+
+async function fetchHentaiGif(category: HentaiCategory, fallback?: HentaiCategory): Promise<string | null> {
+  const tryPurrbot = async (cat: HentaiCategory): Promise<string | null> => {
     try {
-      const url = `https://api.tenor.com/v1/search?q=${encodeURIComponent(q)}&key=LIVDSRZULELA&contentfilter=off&limit=20`;
-      const res = await fetch(url);
+      const res = await fetch(`https://purrbot.site/api/img/nsfw/${cat}/gif`);
       const data = await res.json() as any;
-      const results = data?.results;
-      if (!results?.length) return null;
-      const item = results[Math.floor(Math.random() * results.length)];
-      const media = item?.media?.[0];
-      if (!media) return null;
-      return media.gif?.url ?? media.tinygif?.url ?? media.nanogif?.url ?? media.mediumgif?.url ?? null;
+      return data?.link ?? null;
     } catch {
       return null;
     }
   };
-  return (await tryFetch(query)) ?? (fallbackQuery ? await tryFetch(fallbackQuery) : null);
+  const tryWaifuPics = async (): Promise<string | null> => {
+    try {
+      const res = await fetch("https://api.waifu.pics/nsfw/blowjob");
+      const data = await res.json() as any;
+      return data?.url ?? null;
+    } catch {
+      return null;
+    }
+  };
+  return (await tryPurrbot(category)) ?? (fallback ? await tryPurrbot(fallback) : null) ?? (category === "blowjob" ? await tryWaifuPics() : null);
 }
 
-async function replyWithGif(interaction: CommandInteraction, text: string, gifQuery: string, fallbackQuery?: string) {
-  const gifUrl = await fetchGif(gifQuery, fallbackQuery);
+async function replyWithGif(interaction: CommandInteraction, text: string, category: HentaiCategory, fallback?: HentaiCategory) {
+  const gifUrl = await fetchHentaiGif(category, fallback);
   if (gifUrl) {
     const embed = new EmbedBuilder().setImage(gifUrl).setColor(0x1a0010);
     await interaction.reply({ content: text, embeds: [embed] });
@@ -194,7 +199,7 @@ export async function executeSmash(interaction: CommandInteraction, client: Clie
     const blocked = await handleNsfwOnLilith(interaction, client);
     if (blocked) return;
     const act = SMASH_LILITH_DM[Math.floor(Math.random() * SMASH_LILITH_DM.length)];
-    return replyWithGif(interaction, `🖤 ${act}`, "hentai sex", "anime sex");
+    return replyWithGif(interaction, `🖤 ${act}`, "fuck");
   }
 
   if (interaction.guild) {
@@ -211,7 +216,7 @@ export async function executeSmash(interaction: CommandInteraction, client: Clie
     .replace("{actor}", `**${interaction.user.username}**`)
     .replace("{target}", `**${target.username}**`);
 
-  await replyWithGif(interaction, `🔥 ${act}`, "hentai sex", "anime sex");
+  await replyWithGif(interaction, `🔥 ${act}`, "fuck");
 }
 
 export const blowData = new SlashCommandBuilder()
@@ -231,9 +236,8 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
     const giving = Math.random() > 0.5;
     const pool = giving ? BLOW_LILITH_DM_GIVE : BLOW_LILITH_DM_RECEIVE;
     const act = pool[Math.floor(Math.random() * pool.length)];
-    const gifQuery = giving ? "hentai blowjob" : "hentai cunnilingus";
-    const gifFallback = giving ? "anime blowjob" : "anime cunnilingus";
-    return replyWithGif(interaction, `🖤 ${act}`, gifQuery, gifFallback);
+    const category = giving ? "blowjob" : "yuri";
+    return replyWithGif(interaction, `🖤 ${act}`, category, "solo");
   }
 
   if (interaction.guild) {
@@ -252,5 +256,5 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
     .replace("{actor}", `**${interaction.user.username}**`)
     .replace("{target}", `**${target.username}**`);
 
-  await replyWithGif(interaction, `💋 ${act}`, "hentai oral", "anime oral");
+  await replyWithGif(interaction, `💋 ${act}`, "blowjob", "yuri");
 }
