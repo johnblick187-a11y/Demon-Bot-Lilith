@@ -91,6 +91,8 @@ export async function initDb() {
       user_id TEXT NOT NULL,
       command_name TEXT NOT NULL,
       used_date DATE NOT NULL DEFAULT CURRENT_DATE,
+      month_key TEXT NOT NULL DEFAULT TO_CHAR(CURRENT_DATE, 'YYYY-MM'),
+      use_count INTEGER NOT NULL DEFAULT 1,
       PRIMARY KEY (guild_id, user_id, command_name)
     );
   `);
@@ -98,6 +100,9 @@ export async function initDb() {
   await pool.query(`
     ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS locked_prefix TEXT DEFAULT NULL;
     ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS daily_limit BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE custom_command_usage ADD COLUMN IF NOT EXISTS month_key TEXT;
+    ALTER TABLE custom_command_usage ADD COLUMN IF NOT EXISTS use_count INTEGER NOT NULL DEFAULT 1;
+    UPDATE custom_command_usage SET month_key = TO_CHAR(used_date, 'YYYY-MM') WHERE month_key IS NULL;
   `);
 }
 
@@ -368,12 +373,15 @@ export async function canUseCustomCommandToday(
   commandName: string
 ): Promise<boolean> {
   const res = await pool.query(
-    `SELECT used_date FROM custom_command_usage
-     WHERE guild_id=$1 AND user_id=$2 AND command_name=$3
-       AND DATE_TRUNC('month', used_date) = DATE_TRUNC('month', CURRENT_DATE)`,
+    `SELECT use_count, month_key FROM custom_command_usage
+     WHERE guild_id=$1 AND user_id=$2 AND command_name=$3`,
     [guildId, userId, commandName]
   );
-  return res.rows.length === 0;
+  if (res.rows.length === 0) return true;
+  const { use_count, month_key } = res.rows[0];
+  const currentMonth = new Date().toISOString().slice(0, 7);
+  if (month_key !== currentMonth) return true;
+  return parseInt(use_count, 10) < 2;
 }
 
 export async function recordCustomCommandUsage(
@@ -381,10 +389,17 @@ export async function recordCustomCommandUsage(
   userId: string,
   commandName: string
 ): Promise<void> {
+  const currentMonth = new Date().toISOString().slice(0, 7);
   await pool.query(
-    `INSERT INTO custom_command_usage (guild_id, user_id, command_name, used_date)
-     VALUES ($1, $2, $3, CURRENT_DATE)
-     ON CONFLICT (guild_id, user_id, command_name) DO UPDATE SET used_date = CURRENT_DATE`,
-    [guildId, userId, commandName]
+    `INSERT INTO custom_command_usage (guild_id, user_id, command_name, used_date, month_key, use_count)
+     VALUES ($1, $2, $3, CURRENT_DATE, $4, 1)
+     ON CONFLICT (guild_id, user_id, command_name) DO UPDATE SET
+       use_count = CASE
+         WHEN custom_command_usage.month_key = $4 THEN custom_command_usage.use_count + 1
+         ELSE 1
+       END,
+       month_key = $4,
+       used_date = CURRENT_DATE`,
+    [guildId, userId, commandName, currentMonth]
   );
 }

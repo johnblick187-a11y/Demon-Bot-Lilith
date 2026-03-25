@@ -62,7 +62,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
       const allowed = await canUseCustomCommandToday(message.guild.id, userId, cmd.command_name);
       if (!allowed) {
         await message.reply(
-          `You've already used \`${triggerPrefix}${cmd.command_name}\` this month. Come back next month.`
+          `You've already used \`${triggerPrefix}${cmd.command_name}\` twice this month. Come back next month.`
         );
         return;
       }

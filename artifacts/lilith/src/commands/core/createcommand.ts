@@ -23,7 +23,7 @@ export const data = new SlashCommandBuilder()
     sub
       .setName("custom-command")
       .setDescription(
-        "Create a custom command with a locked prefix and once-per-month usage limit per user"
+        "Create a custom command with a locked prefix and twice-per-month usage limit per user"
       )
       .addStringOption((opt) =>
         opt
