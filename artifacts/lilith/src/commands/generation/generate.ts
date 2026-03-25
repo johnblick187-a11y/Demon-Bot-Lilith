@@ -27,20 +27,12 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName("video")
-      .setDescription("Generate an AI video from a text prompt")
+      .setDescription("Generate a 6s AI video from a text prompt")
       .addStringOption((opt) =>
         opt
           .setName("prompt")
           .setDescription("Describe the video you want")
           .setRequired(true)
-      )
-      .addIntegerOption((opt) =>
-        opt
-          .setName("duration")
-          .setDescription("Length in seconds, up to 3:30 (210s) — default 6s")
-          .setRequired(false)
-          .setMinValue(1)
-          .setMaxValue(210)
       )
   )
   .addSubcommand((sub) =>
@@ -75,20 +67,16 @@ export async function execute(interaction: CommandInteraction) {
 
   await interaction.deferReply();
 
-  const duration = (interaction.options as any).getInteger("duration") as number | null;
-
   if (sub === "video") {
-    const videoDuration = duration ?? 6;
-    await interaction.editReply(`🎬 Generating ${videoDuration}s video for *"${prompt}"*… this takes ~30-90 seconds.`);
+    await interaction.editReply(`🎬 Generating a 6s video for *"${prompt}"*… this takes ~60-90 seconds.`);
 
     try {
       const output = await replicate.run(
-        "minimax/video-01",
+        "minimax/video-01:5aa835260ff7f40f4069c41185f72036accf99e29957bb4a3b3a911f3b6c1912",
         {
           input: {
             prompt,
             prompt_optimizer: true,
-            duration: videoDuration,
           },
         }
       );
@@ -119,7 +107,7 @@ export async function execute(interaction: CommandInteraction) {
     }
   } else if (sub === "music") {
     const vocals = (interaction.options as any).getBoolean("vocals") as boolean | null ?? false;
-    const musicDuration = duration ?? 30;
+    const musicDuration = ((interaction.options as any).getInteger("duration") as number | null) ?? 30;
 
     await interaction.editReply(
       `🎵 Generating ${musicDuration}s ${vocals ? "song with vocals" : "instrumental"} for *"${prompt}"*… this takes ~30-90 seconds.`
