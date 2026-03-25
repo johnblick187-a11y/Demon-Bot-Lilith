@@ -6,84 +6,67 @@ import {
 import {
   setGuildPrefix,
   getGuildPrefix,
-  getUserBotPrefix,
-  setUserBotPrefix,
+  getGuildUserPrefix,
+  setGuildUserPrefix,
 } from "../../lib/db.js";
 
 export const data = new SlashCommandBuilder()
   .setName("changeprefix")
-  .setDescription("Change or look up the prefix for any individual user or bot")
+  .setDescription("Change the command prefix for a specific user in this server")
   .addUserOption((opt) =>
     opt
       .setName("user")
-      .setDescription("The user or bot whose prefix you want to change")
+      .setDescription("The user whose prefix you want to change")
       .setRequired(true)
   )
   .addStringOption((opt) =>
     opt
       .setName("new_prefix")
-      .setDescription("The new prefix to assign (leave blank to look up their current prefix)")
+      .setDescription("Their new prefix — leave blank to check what prefix they currently use")
       .setRequired(false)
       .setMinLength(1)
       .setMaxLength(5)
-  );
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export async function execute(interaction: CommandInteraction) {
+  if (!interaction.guildId) {
+    return interaction.reply({ content: "This command is server-only.", ephemeral: true });
+  }
+
   const targetUser = (interaction.options as any).getUser("user") as {
     id: string;
     username: string;
     bot: boolean;
   };
-  const chosenPrefix = (interaction.options as any).getString("new_prefix") as string | null;
+  const newPrefix = (interaction.options as any).getString("new_prefix") as string | null;
 
-  if (chosenPrefix && /\s/.test(chosenPrefix)) {
+  if (newPrefix && /\s/.test(newPrefix)) {
     return interaction.reply({ content: "Prefix cannot contain spaces.", ephemeral: true });
   }
 
   const displayName = targetUser.username;
 
-  if (chosenPrefix) {
-    await setUserBotPrefix(interaction.user.id, targetUser.id, chosenPrefix, displayName);
+  if (newPrefix) {
+    await setGuildUserPrefix(interaction.guildId, targetUser.id, newPrefix);
 
-    const isLilith = targetUser.id === interaction.client.user?.id;
-    if (isLilith && interaction.guildId) {
-      const member = interaction.guild?.members.cache.get(interaction.user.id);
-      if (member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
-        await setGuildPrefix(interaction.guildId, chosenPrefix);
-        return interaction.reply(
-          `✅ Lilith's prefix in this server is now \`${chosenPrefix}\`.\n` +
-          `*(Commands created with \`/create custom-command\` keep their original prefix regardless.)*`
-        );
-      }
-    }
+    const guildDefault = await getGuildPrefix(interaction.guildId);
+    const note = newPrefix === guildDefault
+      ? ` *(same as the server default — their personal prefix is now cleared to the default)*`
+      : ``;
 
-    return interaction.reply({
-      content:
-        `✅ **${displayName}**'s prefix set to \`${chosenPrefix}\` in your personal book.\n` +
-        `Look it up anytime with \`/editprefix user:${displayName}\`.`,
-      ephemeral: true,
-    });
+    return interaction.reply(
+      `✅ **${displayName}**'s prefix in this server is now \`${newPrefix}\`.\n` +
+      `They'll trigger custom commands with \`${newPrefix}<command>\`.${note}`
+    );
   } else {
-    const isLilith = targetUser.id === interaction.client.user?.id;
-    if (isLilith && interaction.guildId) {
-      const current = await getGuildPrefix(interaction.guildId);
-      return interaction.reply({
-        content: `Lilith's current prefix in this server is \`${current}\`.`,
-        ephemeral: true,
-      });
-    }
+    const personal = await getGuildUserPrefix(interaction.guildId, targetUser.id);
+    const guildDefault = await getGuildPrefix(interaction.guildId);
+    const effective = personal ?? guildDefault;
+    const source = personal ? "personal prefix" : "server default";
 
-    const saved = await getUserBotPrefix(interaction.user.id, targetUser.id);
-    if (!saved) {
-      return interaction.reply({
-        content:
-          `No prefix saved for **${displayName}** yet.\n` +
-          `Use \`/editprefix user:${displayName} choose_prefix:[prefix]\` to set one.`,
-        ephemeral: true,
-      });
-    }
     return interaction.reply({
-      content: `**${saved.bot_username ?? displayName}**'s prefix is \`${saved.prefix}\`.`,
+      content: `**${displayName}** uses prefix \`${effective}\` in this server *(${source})*.`,
       ephemeral: true,
     });
   }

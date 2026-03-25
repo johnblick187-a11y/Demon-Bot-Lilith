@@ -79,6 +79,13 @@ export async function initDb() {
       PRIMARY KEY (owner_user_id, bot_user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS guild_user_prefixes (
+      guild_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      prefix TEXT NOT NULL,
+      PRIMARY KEY (guild_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS custom_command_usage (
       guild_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
@@ -260,6 +267,22 @@ export async function setTrackedBotPrefix(
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (guild_id, bot_user_id) DO UPDATE SET prefix=$3, bot_username=COALESCE($4, tracked_bot_prefixes.bot_username)`,
     [guildId, botUserId, prefix, botUsername ?? null]
+  );
+}
+
+export async function getGuildUserPrefix(guildId: string, userId: string): Promise<string | null> {
+  const res = await pool.query(
+    `SELECT prefix FROM guild_user_prefixes WHERE guild_id=$1 AND user_id=$2`,
+    [guildId, userId]
+  );
+  return res.rows[0]?.prefix ?? null;
+}
+
+export async function setGuildUserPrefix(guildId: string, userId: string, prefix: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO guild_user_prefixes (guild_id, user_id, prefix) VALUES ($1, $2, $3)
+     ON CONFLICT (guild_id, user_id) DO UPDATE SET prefix=$3`,
+    [guildId, userId, prefix]
   );
 }
 

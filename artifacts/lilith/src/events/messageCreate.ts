@@ -2,9 +2,9 @@ import { Message, Client } from "discord.js";
 import {
   getAutoreacts,
   getAutoreplies,
-  getRelation,
   updateRelation,
   getGuildPrefix,
+  getGuildUserPrefix,
   getCustomCommands,
   canUseCustomCommandToday,
   recordCustomCommandUsage,
@@ -19,12 +19,15 @@ export async function handleMessageCreate(message: Message, client: Client) {
   const content = message.content;
   const contentLower = content.toLowerCase();
 
-  const [reacts, replies, guildPrefix, allCommands] = await Promise.all([
+  const [reacts, replies, guildPrefix, userPrefix, allCommands] = await Promise.all([
     getAutoreacts(message.guild.id),
     getAutoreplies(message.guild.id),
     getGuildPrefix(message.guild.id),
+    getGuildUserPrefix(message.guild.id, userId),
     getCustomCommands(message.guild.id),
   ]);
+
+  const effectivePrefix = userPrefix ?? guildPrefix;
 
   for (const react of reacts) {
     if (contentLower.includes(react.trigger)) {
@@ -48,10 +51,10 @@ export async function handleMessageCreate(message: Message, client: Client) {
   }
 
   for (const cmd of allCommands) {
-    const effectivePrefix = cmd.locked_prefix ?? guildPrefix;
-    if (!content.startsWith(effectivePrefix)) continue;
+    const triggerPrefix = cmd.locked_prefix ?? effectivePrefix;
+    if (!content.startsWith(triggerPrefix)) continue;
 
-    const withoutPrefix = content.slice(effectivePrefix.length).trim();
+    const withoutPrefix = content.slice(triggerPrefix.length).trim();
     const commandName = withoutPrefix.split(/\s+/)[0]?.toLowerCase();
     if (commandName !== cmd.command_name) continue;
 
@@ -59,7 +62,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
       const allowed = await canUseCustomCommandToday(message.guild.id, userId, cmd.command_name);
       if (!allowed) {
         await message.reply(
-          `You've already used \`${effectivePrefix}${cmd.command_name}\` today. Come back tomorrow.`
+          `You've already used \`${triggerPrefix}${cmd.command_name}\` today. Come back tomorrow.`
         );
         return;
       }
