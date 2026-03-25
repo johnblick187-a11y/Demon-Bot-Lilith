@@ -2,6 +2,7 @@ import { Message, Client } from "discord.js";
 import {
   getAutoreacts,
   getAutoreplies,
+  getRelation,
   updateRelation,
   getGuildPrefix,
   getGuildUserPrefix,
@@ -9,7 +10,8 @@ import {
   canUseCustomCommandToday,
   recordCustomCommandUsage,
 } from "../lib/db.js";
-import { OWNER_ID, BOT_MULTIPLIER } from "../lib/constants.js";
+import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
+import { askLilith } from "../lib/ai.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
   if (!message.guild) return;
@@ -68,10 +70,41 @@ export async function handleMessageCreate(message: Message, client: Client) {
     }
   }
 
-  if (message.mentions.has(client.user!)) {
-    if (userId !== OWNER_ID) {
-      await updateRelation(userId, { affinity: 1 });
+  const isMentioned = message.mentions.has(client.user!);
+  const isReplyToLilith = message.reference?.messageId
+    ? (await message.channel.messages.fetch(message.reference.messageId).catch(() => null))?.author?.id === client.user?.id
+    : false;
+
+  if (isMentioned || isReplyToLilith) {
+    const isOwner = userId === OWNER_ID;
+    const rel = isOwner
+      ? { affinity: 100, annoyance: 0, blacklisted: false, enemy: false }
+      : await getRelation(userId, message.author.username);
+
+    if (rel.blacklisted) return;
+
+    const query = message.content
+      .replace(/<@!?\d+>/g, "")
+      .trim() || "...";
+
+    try {
+      await message.channel.sendTyping();
+      const response = await askLilith(query, {
+        userId,
+        username: message.author.username,
+        affinity: rel.affinity,
+        annoyance: rel.annoyance,
+        isOwner,
+        mode: "chat",
+        enemy: (rel as any).enemy ?? false,
+      } as any);
+      await message.reply(response);
+    } catch {}
+
+    if (!isOwner) {
+      await updateRelation(userId, { affinity: AFFINITY_TABLE.mention });
     }
+    return;
   }
 
   for (const cmd of allCommands) {

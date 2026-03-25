@@ -211,6 +211,18 @@ for (const { data: actionData, action } of actionCommands) {
   commandMap.set(actionData.name, (i, c) => executeAction(i, action, c));
 }
 
+client.on("error", (err) => console.error("Discord client error:", err));
+
+process.on("uncaughtException", (err: any) => {
+  if (err?.code === 10062) return;
+  console.error("Uncaught exception:", err);
+});
+
+process.on("unhandledRejection", (reason: any) => {
+  if (reason?.code === 10062) return;
+  console.error("Unhandled rejection:", reason);
+});
+
 client.once("ready", () => handleReady(client));
 
 client.on("messageCreate", (message) => handleMessageCreate(message, client));
