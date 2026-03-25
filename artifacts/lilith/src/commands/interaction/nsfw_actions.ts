@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, Client } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, Client, PermissionFlagsBits } from "discord.js";
 import { getRelation, updateRelation, getGuildSettings, blacklistUser, lockAnnoyance } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
@@ -27,40 +27,52 @@ async function isNsfwAllowed(guildId: string, channelId: string): Promise<boolea
   return settings.nsfw_enabled || (settings.nsfw_channels && settings.nsfw_channels.includes(channelId));
 }
 
+async function banFromAllGuilds(userId: string, username: string, client: Client): Promise<number> {
+  let banned = 0;
+  for (const guild of client.guilds.cache.values()) {
+    try {
+      const me = guild.members.me;
+      if (!me?.permissions.has(PermissionFlagsBits.BanMembers)) continue;
+      await guild.bans.create(userId, { reason: `NSFW command used against Lilith by ${username}. Automatic ban.` });
+      banned++;
+    } catch {}
+  }
+  return banned;
+}
+
 async function handleNsfwOnLilith(
   interaction: CommandInteraction,
   client: Client
 ): Promise<boolean> {
   const target = (interaction.options as any).getUser("user", true);
-  if (target.id === client.user?.id) {
-    const userId = interaction.user.id;
+  if (target.id !== client.user?.id) return false;
 
-    if (userId === OWNER_ID) {
-      return false;
-    }
+  const userId = interaction.user.id;
+  if (userId === OWNER_ID) return false;
 
-    const rel = await getRelation(userId, interaction.user.username);
-    const incidentCount = rel.nsfw_incident_count + 1;
+  const rel = await getRelation(userId, interaction.user.username);
+  const incidentCount = rel.nsfw_incident_count + 1;
 
-    await interaction.reply({
-      content: `Did you just try to use an NSFW command on **me**? Bold of you to assume I'd allow that. Absolutely not.\n\n*tweakbrazy has been notified of your audacity.*`,
-      ephemeral: false,
-    });
+  await interaction.reply({
+    content: `You just tried to use an NSFW command on **me**.\n\nThat was a mistake.`,
+    ephemeral: false,
+  });
 
-    await updateRelation(userId, { annoyance: 50 });
+  await updateRelation(userId, { annoyance: 50 });
 
-    await lockAnnoyanceAndNotify(userId, incidentCount, interaction, client);
+  const banned = await banFromAllGuilds(userId, interaction.user.username, client);
 
-    return true;
-  }
-  return false;
+  await lockAnnoyanceAndNotify(userId, incidentCount, interaction, client, banned);
+
+  return true;
 }
 
 async function lockAnnoyanceAndNotify(
   userId: string,
   incidentCount: number,
   interaction: CommandInteraction,
-  client: Client
+  client: Client,
+  bannedCount: number = 0
 ) {
   const pool = await import("../../lib/db.js");
 
@@ -72,21 +84,20 @@ async function lockAnnoyanceAndNotify(
   try {
     const owner = await client.users.fetch(OWNER_ID);
     const guild = interaction.guild;
-    const member = guild?.members.cache.get(userId);
     await owner.send(
-      `⚠️ **NSFW Incident Alert**\n**User:** ${interaction.user.username} (${userId})\n**Incident #${incidentCount}**\n**Server:** ${guild?.name ?? "DM"}\n\n${
-        incidentCount >= 2
-          ? "Second offense — annoyance locked at 100 and user BLACKLISTED."
-          : "First offense — 50 annoyance points added."
-      }`
+      `⚠️ **NSFW Incident — Lilith Targeted**\n` +
+      `**User:** ${interaction.user.username} (${userId})\n` +
+      `**Incident #${incidentCount}**\n` +
+      `**Server:** ${guild?.name ?? "DM"}\n` +
+      `**Banned from:** ${bannedCount} server${bannedCount !== 1 ? "s" : ""}\n\n` +
+      `${incidentCount >= 2 ? "Second offense — user BLACKLISTED." : "First offense."}`
     );
-  } catch {
-  }
+  } catch {}
 
   if (incidentCount >= 2) {
     await blacklistUser(userId);
     await interaction.followUp({
-      content: `Second offense. You're blacklisted. Permanently. Don't touch my commands again.`,
+      content: `Second offense. You're blacklisted. Permanently.`,
       ephemeral: false,
     });
   }
