@@ -369,7 +369,8 @@ export async function canUseCustomCommandToday(
 ): Promise<boolean> {
   const res = await pool.query(
     `SELECT used_date FROM custom_command_usage
-     WHERE guild_id=$1 AND user_id=$2 AND command_name=$3 AND used_date = CURRENT_DATE`,
+     WHERE guild_id=$1 AND user_id=$2 AND command_name=$3
+       AND DATE_TRUNC('month', used_date) = DATE_TRUNC('month', CURRENT_DATE)`,
     [guildId, userId, commandName]
   );
   return res.rows.length === 0;
