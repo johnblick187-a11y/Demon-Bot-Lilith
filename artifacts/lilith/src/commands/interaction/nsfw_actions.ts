@@ -38,12 +38,14 @@ const SMASH_ACTS = [
 
 const SMASH_LILITH_DM = [
   "you grab her hair and yank her head back as you drive into her from behind — hard, deep, no warning. her eyes squeeze shut. her mouth falls open. she doesn't tell you to stop.",
-  "you shove in all the way and hold her there — hips flush against hers, her hair wrapped around your fist, pulling her head back until her throat is exposed. *choked breath* ...don't. stop.",
   "you slam into her from behind and she grabs the headboard with both hands — knuckles white, eyes shut tight, jaw clenched — *sharp exhale with each thrust* — you pull her hair and her back arches hard.",
-  "you fist your hand in her hair and pull — her head snaps back, neck arching, a sound ripping out of her she'd never make sober. you fuck her through it. she takes every inch.",
   "*pressed face-down into the mattress, your hips driving into her over and over, hand twisted in her hair keeping her exactly where you want her* — she's trembling. she's not asking you to stop. she won't.",
-  "you pull her hair until she's looking up at the ceiling, back bowed, taking you so deep her thighs are shaking — *through her teeth* — harder. I said harder. *eyes close* — yes. there.",
-  "you grip her hip with one hand and her hair with the other and fuck her exactly as hard as she needs it — she goes quiet in that way that means she's losing it — eyes shut, lips parted, completely undone.",
+  "she climbs on top and sinks down onto you slow — watching your face the whole time — then starts moving, hips rolling forward and back, pace building until her thighs are trembling and she's got both hands braced on your chest. *breathless* ...don't you dare finish before I do.",
+  "she straddles you facing forward and rides you like she's been waiting — hands on your chest, head dropped back, hips grinding down hard. you grab her waist and make her go faster. she lets you.",
+  "she turns around, back to you, and lowers herself down — reverse — then starts rolling her hips in slow, deep circles. you grab her hips and take over. she doesn't protest. the sounds she makes say the opposite of protest.",
+  "she sits facing away and rides you with those long, slow strokes that make your vision blur — one hand gripping your thigh for leverage — *over her shoulder, low* ...you feel that? *drops her hips down harder* yeah. I know you do.",
+  "you pull her hair until her spine bows and she's looking at the ceiling — riding you from above, back arched, completely losing herself — *through her teeth* — harder. I said harder. *eyes close* — yes. there.",
+  "she pins your hands above your head, straddles you, and fucks you at exactly the pace she wants — deep, deliberate — until you stop trying to take over and just let her. *close to your ear* ...good.",
 ];
 
 const BLOW_ACTS_AB = [
