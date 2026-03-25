@@ -141,8 +141,8 @@ export async function handleMessageCreate(message: Message, client: Client) {
   if (rel.blacklisted) return;
 
   const mode = computeMode(rel.affinity, rel.annoyance, (rel as any).enemy ?? false);
-  const chanceByMode: Record<string, number> = { default: 0.05, angry: 0.12, chaos: 0.22 };
-  const chance = chanceByMode[mode] ?? 0.05;
+  const chanceByMode: Record<string, number> = { default: 0.30, angry: 0.55, chaos: 0.75 };
+  const chance = chanceByMode[mode] ?? 0.30;
 
   if (Math.random() > chance) return;
 
