@@ -11,7 +11,7 @@ import {
 } from "../../lib/db.js";
 
 export const data = new SlashCommandBuilder()
-  .setName("editprefix")
+  .setName("changeprefix")
   .setDescription("Change or look up the prefix for any individual user or bot")
   .addUserOption((opt) =>
     opt
@@ -21,7 +21,7 @@ export const data = new SlashCommandBuilder()
   )
   .addStringOption((opt) =>
     opt
-      .setName("choose_prefix")
+      .setName("new_prefix")
       .setDescription("The new prefix to assign (leave blank to look up their current prefix)")
       .setRequired(false)
       .setMinLength(1)
@@ -34,7 +34,7 @@ export async function execute(interaction: CommandInteraction) {
     username: string;
     bot: boolean;
   };
-  const chosenPrefix = (interaction.options as any).getString("choose_prefix") as string | null;
+  const chosenPrefix = (interaction.options as any).getString("new_prefix") as string | null;
 
   if (chosenPrefix && /\s/.test(chosenPrefix)) {
     return interaction.reply({ content: "Prefix cannot contain spaces.", ephemeral: true });
