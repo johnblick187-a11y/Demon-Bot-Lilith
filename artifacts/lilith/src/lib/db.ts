@@ -47,6 +47,19 @@ export async function initDb() {
       reason TEXT NOT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
+
+    CREATE TABLE IF NOT EXISTS guild_prefix (
+      guild_id TEXT PRIMARY KEY,
+      prefix TEXT NOT NULL DEFAULT '!'
+    );
+
+    CREATE TABLE IF NOT EXISTS custom_commands (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      command_name TEXT NOT NULL,
+      effect TEXT NOT NULL,
+      UNIQUE(guild_id, command_name)
+    );
   `);
 }
 
@@ -173,4 +186,47 @@ export async function getWarnings(guildId: string, userId: string) {
     [guildId, userId]
   );
   return res.rows;
+}
+
+export async function getGuildPrefix(guildId: string): Promise<string> {
+  const res = await pool.query(
+    `INSERT INTO guild_prefix (guild_id, prefix) VALUES ($1, '!')
+     ON CONFLICT (guild_id) DO NOTHING RETURNING prefix`,
+    [guildId]
+  );
+  if (res.rows.length > 0) return res.rows[0].prefix;
+  const r2 = await pool.query(`SELECT prefix FROM guild_prefix WHERE guild_id=$1`, [guildId]);
+  return r2.rows[0]?.prefix ?? "!";
+}
+
+export async function setGuildPrefix(guildId: string, prefix: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO guild_prefix (guild_id, prefix) VALUES ($1, $2)
+     ON CONFLICT (guild_id) DO UPDATE SET prefix=$2`,
+    [guildId, prefix]
+  );
+}
+
+export async function addCustomCommand(guildId: string, name: string, effect: string): Promise<void> {
+  await pool.query(
+    `INSERT INTO custom_commands (guild_id, command_name, effect) VALUES ($1, $2, $3)
+     ON CONFLICT (guild_id, command_name) DO UPDATE SET effect=$3`,
+    [guildId, name.toLowerCase(), effect]
+  );
+}
+
+export async function getCustomCommands(guildId: string): Promise<{ command_name: string; effect: string }[]> {
+  const res = await pool.query(
+    `SELECT command_name, effect FROM custom_commands WHERE guild_id=$1`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function getCustomCommand(guildId: string, name: string): Promise<string | null> {
+  const res = await pool.query(
+    `SELECT effect FROM custom_commands WHERE guild_id=$1 AND command_name=$2`,
+    [guildId, name.toLowerCase()]
+  );
+  return res.rows[0]?.effect ?? null;
 }

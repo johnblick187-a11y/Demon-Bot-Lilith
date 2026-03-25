@@ -15,6 +15,8 @@ import * as help from "./commands/core/help.js";
 import * as mood from "./commands/core/mood.js";
 import * as annoyance from "./commands/core/annoyance.js";
 import * as affinity from "./commands/core/affinity.js";
+import * as prefix from "./commands/core/prefix.js";
+import * as createCommand from "./commands/core/createcommand.js";
 
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
@@ -49,6 +51,8 @@ import * as info from "./commands/moderation/info.js";
 import { avatarData, executeAvatar, bannerData, executeBanner } from "./commands/moderation/avatar.js";
 import * as autoreact from "./commands/moderation/autoreact.js";
 import * as autoreply from "./commands/moderation/autoreply.js";
+import * as stealemoji from "./commands/moderation/stealemoji.js";
+import * as stealsticker from "./commands/moderation/stealsticker.js";
 
 import {
   hitsmethData, executeHitsmeth,
@@ -58,7 +62,6 @@ import {
 } from "./commands/fun/drugs.js";
 
 import * as tts from "./commands/generation/tts.js";
-import * as create from "./commands/generation/create.js";
 
 import * as join from "./commands/vc/join.js";
 import * as leave from "./commands/vc/leave.js";
@@ -89,6 +92,7 @@ const client = new Client({
     GatewayIntentBits.MessageContent,
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageReactions,
+    GatewayIntentBits.GuildEmojisAndStickers,
   ],
 });
 
@@ -100,6 +104,8 @@ const allCommandDefs: any[] = [
   mood.data,
   annoyance.data,
   affinity.data,
+  prefix.data,
+  createCommand.data,
   ask.data,
   task.data,
   nsfwtoggle.data,
@@ -122,12 +128,13 @@ const allCommandDefs: any[] = [
   bannerData,
   autoreact.data,
   autoreply.data,
+  stealemoji.data,
+  stealsticker.data,
   hitsmethData,
   hitsweedData,
   chugsdrinkData,
   popspillData,
   tts.data,
-  create.data,
   join.data,
   leave.data,
   playData,
@@ -149,6 +156,8 @@ commandMap.set("help", (i) => help.execute(i));
 commandMap.set("mood", (i) => mood.execute(i));
 commandMap.set("annoyance", (i) => annoyance.execute(i));
 commandMap.set("affinity", (i) => affinity.execute(i));
+commandMap.set("prefix", (i) => prefix.execute(i));
+commandMap.set("create", (i) => createCommand.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));
@@ -171,12 +180,13 @@ commandMap.set("avatar", (i) => executeAvatar(i));
 commandMap.set("banner", (i) => executeBanner(i));
 commandMap.set("autoreact", (i) => autoreact.execute(i));
 commandMap.set("autoreply", (i) => autoreply.execute(i));
+commandMap.set("stealemoji", (i) => stealemoji.execute(i));
+commandMap.set("stealsticker", (i) => stealsticker.execute(i));
 commandMap.set("hitsmeth", (i) => executeHitsmeth(i));
 commandMap.set("hitsweed", (i) => executeHitsweed(i));
 commandMap.set("chugsdrink", (i) => executeChugsdrink(i));
 commandMap.set("popspill", (i) => executePopspill(i));
 commandMap.set("tts", (i) => tts.execute(i));
-commandMap.set("create", (i) => create.execute(i));
 commandMap.set("join", (i) => join.execute(i));
 commandMap.set("leave", (i) => leave.execute(i));
 commandMap.set("play", (i) => executePlay(i));
