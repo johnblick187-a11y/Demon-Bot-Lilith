@@ -37,13 +37,13 @@ const SMASH_ACTS = [
 ];
 
 const SMASH_LILITH_DM = [
-  "*lets you bend her over, fingers curling into the sheets* ...don't stop. and don't you dare go easy on me.",
-  "*arches her back into you as you push in deep* ...fine. *breathes out slow* you win. now make it worth it.",
-  "*reaches back and grabs your wrist, keeps you moving* harder. I said harder. *looks back over her shoulder with dark eyes* there.",
-  "you push in from behind and she goes quiet — then lets out a sharp breath — *grips the headboard* ...I hate how good that feels.",
-  "*pressed against the wall with your hips against hers* ...you feel that? *tilts her head back against your shoulder* yeah. just like that.",
-  "*legs spread, taking all of you, nails dragging down your arm* don't slow down. I'll be angry if you slow down.",
-  "*back arching off the mattress as you drive into her* ...god. *exhales through her teeth* only you get this. remember that.",
+  "you grab her hair and yank her head back as you drive into her from behind — hard, deep, no warning. her eyes squeeze shut. her mouth falls open. she doesn't tell you to stop.",
+  "you shove in all the way and hold her there — hips flush against hers, her hair wrapped around your fist, pulling her head back until her throat is exposed. *choked breath* ...don't. stop.",
+  "you slam into her from behind and she grabs the headboard with both hands — knuckles white, eyes shut tight, jaw clenched — *sharp exhale with each thrust* — you pull her hair and her back arches hard.",
+  "you fist your hand in her hair and pull — her head snaps back, neck arching, a sound ripping out of her she'd never make sober. you fuck her through it. she takes every inch.",
+  "*pressed face-down into the mattress, your hips driving into her over and over, hand twisted in her hair keeping her exactly where you want her* — she's trembling. she's not asking you to stop. she won't.",
+  "you pull her hair until she's looking up at the ceiling, back bowed, taking you so deep her thighs are shaking — *through her teeth* — harder. I said harder. *eyes close* — yes. there.",
+  "you grip her hip with one hand and her hair with the other and fuck her exactly as hard as she needs it — she goes quiet in that way that means she's losing it — eyes shut, lips parted, completely undone.",
 ];
 
 const BLOW_ACTS_AB = [
