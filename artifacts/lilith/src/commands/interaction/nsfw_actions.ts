@@ -2,37 +2,25 @@ import { SlashCommandBuilder, CommandInteraction, Client, PermissionFlagsBits, E
 import { getRelation, updateRelation, getGuildSettings, blacklistUser } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
-type HentaiCategory = "fuck" | "blowjob" | "anal" | "solo" | "cum" | "yuri";
-
-async function fetchHentaiGif(category: HentaiCategory, fallback?: HentaiCategory): Promise<string | null> {
-  const tryPurrbot = async (cat: HentaiCategory): Promise<string | null> => {
-    try {
-      const res = await fetch(`https://purrbot.site/api/img/nsfw/${cat}/gif`);
-      const data = await res.json() as any;
-      return data?.link ?? null;
-    } catch {
-      return null;
-    }
-  };
-  const tryWaifuPics = async (): Promise<string | null> => {
-    try {
-      const res = await fetch("https://api.waifu.pics/nsfw/blowjob");
-      const data = await res.json() as any;
-      return data?.url ?? null;
-    } catch {
-      return null;
-    }
-  };
-  return (await tryPurrbot(category)) ?? (fallback ? await tryPurrbot(fallback) : null) ?? (category === "blowjob" ? await tryWaifuPics() : null);
+async function fetchAnimeGif(): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.waifu.pics/nsfw/blowjob");
+    const data = await res.json() as any;
+    return data?.url ?? null;
+  } catch {
+    return null;
+  }
 }
 
-async function replyWithGif(interaction: CommandInteraction, text: string, category: HentaiCategory, fallback?: HentaiCategory) {
-  const gifUrl = await fetchHentaiGif(category, fallback);
-  if (gifUrl) {
-    const embed = new EmbedBuilder().setImage(gifUrl).setColor(0x1a0010);
-    await interaction.reply({ content: text, embeds: [embed] });
+async function replyWithGif(interaction: CommandInteraction, text: string) {
+  const gifUrl = await fetchAnimeGif();
+  const payload = gifUrl
+    ? { content: text, embeds: [new EmbedBuilder().setImage(gifUrl).setColor(0x1a0010)] }
+    : { content: text };
+  if (interaction.deferred || interaction.replied) {
+    await interaction.editReply(payload);
   } else {
-    await interaction.reply(text);
+    await interaction.reply(payload);
   }
 }
 
@@ -199,7 +187,7 @@ export async function executeSmash(interaction: CommandInteraction, client: Clie
     const blocked = await handleNsfwOnLilith(interaction, client);
     if (blocked) return;
     const act = SMASH_LILITH_DM[Math.floor(Math.random() * SMASH_LILITH_DM.length)];
-    return replyWithGif(interaction, `🖤 ${act}`, "fuck");
+    return replyWithGif(interaction, `🖤 ${act}`);
   }
 
   if (interaction.guild) {
@@ -216,7 +204,7 @@ export async function executeSmash(interaction: CommandInteraction, client: Clie
     .replace("{actor}", `**${interaction.user.username}**`)
     .replace("{target}", `**${target.username}**`);
 
-  await replyWithGif(interaction, `🔥 ${act}`, "fuck");
+  await replyWithGif(interaction, `🔥 ${act}`);
 }
 
 export const blowData = new SlashCommandBuilder()
@@ -236,8 +224,7 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
     const giving = Math.random() > 0.5;
     const pool = giving ? BLOW_LILITH_DM_GIVE : BLOW_LILITH_DM_RECEIVE;
     const act = pool[Math.floor(Math.random() * pool.length)];
-    const category = giving ? "blowjob" : "yuri";
-    return replyWithGif(interaction, `🖤 ${act}`, category, "solo");
+    return replyWithGif(interaction, `🖤 ${act}`);
   }
 
   if (interaction.guild) {
@@ -256,5 +243,5 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
     .replace("{actor}", `**${interaction.user.username}**`)
     .replace("{target}", `**${target.username}**`);
 
-  await replyWithGif(interaction, `💋 ${act}`, "blowjob", "yuri");
+  await replyWithGif(interaction, `💋 ${act}`);
 }
