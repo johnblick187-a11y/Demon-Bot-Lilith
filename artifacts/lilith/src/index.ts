@@ -62,6 +62,7 @@ import {
 } from "./commands/fun/drugs.js";
 
 import * as tts from "./commands/generation/tts.js";
+import * as generate from "./commands/generation/generate.js";
 
 import * as join from "./commands/vc/join.js";
 import * as leave from "./commands/vc/leave.js";
@@ -135,6 +136,7 @@ const allCommandDefs: any[] = [
   chugsdrinkData,
   popspillData,
   tts.data,
+  generate.data,
   join.data,
   leave.data,
   playData,
@@ -187,6 +189,7 @@ commandMap.set("hitsweed", (i) => executeHitsweed(i));
 commandMap.set("chugsdrink", (i) => executeChugsdrink(i));
 commandMap.set("popspill", (i) => executePopspill(i));
 commandMap.set("tts", (i) => tts.execute(i));
+commandMap.set("generate", (i) => generate.execute(i));
 commandMap.set("join", (i) => join.execute(i));
 commandMap.set("leave", (i) => leave.execute(i));
 commandMap.set("play", (i) => executePlay(i));

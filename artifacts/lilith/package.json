@@ -8,15 +8,16 @@
     "start": "tsx src/index.ts"
   },
   "dependencies": {
-    "discord.js": "^14.16.3",
-    "openai": "^4.68.4",
     "@discordjs/voice": "^0.18.0",
-    "opusscript": "^0.1.1",
-    "play-dl": "^1.9.7",
-    "node-fetch": "^3.3.2",
-    "pg": "^8.20.0",
-    "drizzle-orm": "catalog:",
     "axios": "^1.7.7",
+    "discord.js": "^14.16.3",
+    "drizzle-orm": "catalog:",
+    "node-fetch": "^3.3.2",
+    "openai": "^4.68.4",
+    "opusscript": "^0.1.1",
+    "pg": "^8.20.0",
+    "play-dl": "^1.9.7",
+    "replicate": "^1.4.0",
     "tweetnacl": "^1.0.3"
   },
   "devDependencies": {
