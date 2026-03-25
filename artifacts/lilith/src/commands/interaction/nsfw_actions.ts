@@ -75,11 +75,13 @@ const BLOW_LILITH_DM_GIVE = [
 ];
 
 const BLOW_LILITH_DM_RECEIVE = [
-  "*thighs close around your head the second your mouth finds her* ...don't stop. *breathes out sharp* I mean it, don't you dare stop.",
-  "*hips roll into your tongue slow, then less slow* ...fine. *grips your hair* right there. don't move.",
-  "*arches her back hard as you eat her out, one hand pressed over her own mouth* ...fuck. *the word barely makes it out*",
-  "*looks down at you between her legs with heavy, dark eyes* ...good. *fingers curl in your hair and pull you closer* deeper.",
-  "*shudders once, then again, thighs trembling against your shoulders* ...you made your point. *breathes through her teeth* now finish it.",
+  "you bury your mouth between her thighs and she grabs your hair immediately — pulls you in harder, hips grinding against your tongue, thighs locking around your head. *through her teeth* ...don't you dare come up for air.",
+  "you eat her out slow at first — tongue working her open — and she lasts about thirty seconds before her hips start rolling into your face, chasing it. *grips your hair with both hands* faster. I said faster.",
+  "you spread her open and go at her with your tongue until her back arches clean off the mattress — one hand pressed over her own mouth, the other fisting your hair and shoving you deeper. she's trying not to make noise. she's losing.",
+  "you lick into her and she clenches immediately — thighs slamming shut around your head, holding you exactly where she wants you — *breathless, barely holding it together* ...right there. don't. move.",
+  "you suck her clit and she makes a sound she'd deny forever — hips snapping up into your mouth, fingers yanking your hair — *looks down at you with dark, wrecked eyes* ...again. do that again.",
+  "you go down on her and don't let up — tongue deep, then shallow, then your lips closing around her until she's shaking and her thighs are squeezing so tight you can barely breathe. she finishes with her hand over her face. you feel her pulse on your tongue.",
+  "you eat her out until she's grinding on your face with zero shame — hips rolling, chasing every stroke of your tongue — *one hand fisted in your hair pulling you in, the other gripping the sheets* — she finishes hard and doesn't apologize once.",
 ];
 
 async function isNsfwAllowed(guildId: string, channelId: string): Promise<boolean> {
