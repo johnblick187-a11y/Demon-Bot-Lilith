@@ -16,6 +16,8 @@ export const ANNOYANCE_TABLE = {
 export const AFFINITY_TABLE = {
   bite:    2,
   pickup:  3,
+  kiss:    3,
+  hug:     2,
   mention: 1,
   ask:     1,
 } as const;

@@ -160,6 +160,32 @@ const ACTIONS: ActionDef[] = [
     ],
     affinityDelta: AFFINITY_TABLE.pickup,
   },
+  {
+    name: "kiss",
+    description: "Kiss a user",
+    emoji: "💋",
+    phrases: [
+      "{actor} kisses {target}. Slow. Deliberate. Like they meant to.",
+      "{actor} leans in and kisses {target}. {target} didn't have time to object.",
+      "{actor} grabs {target} by the face and just — kisses them. No warning.",
+      "{actor} presses their lips to {target}'s. Soft, then not.",
+      "{actor} kisses {target} like it was a decision they made a long time ago.",
+    ],
+    affinityDelta: AFFINITY_TABLE.kiss,
+  },
+  {
+    name: "hug",
+    description: "Hug a user",
+    emoji: "🫂",
+    phrases: [
+      "{actor} pulls {target} into a hug. Doesn't let go right away.",
+      "{actor} wraps their arms around {target}. {target} didn't realize they needed that.",
+      "{actor} hugs {target} from behind. No explanation given.",
+      "{actor} grabs {target} and just holds them there for a moment.",
+      "{actor} hugs {target} tight. Something unspoken passes between them.",
+    ],
+    affinityDelta: AFFINITY_TABLE.hug,
+  },
 ];
 
 export const commands = ACTIONS.map((action) => {
