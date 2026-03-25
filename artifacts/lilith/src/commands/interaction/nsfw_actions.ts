@@ -63,11 +63,13 @@ const BLOW_ACTS_BA = [
 ];
 
 const BLOW_LILITH_DM_GIVE = [
-  "*drops to her knees and takes you in her mouth without warning — deep, deliberate, no hesitation* ...you're not going anywhere.",
-  "*wraps her lips around you and takes it slow — tongue tracing the underside all the way down* only you get this. remember that.",
-  "*hollows her cheeks and sucks you off with those heavy, dark eyes looking up at you the whole time* ...don't look away.",
-  "*takes you to the back of her throat and holds it — fingers digging into your thighs* ...there. *pulls back slow* ...again?",
-  "*strokes you once, then her mouth replaces her hand — warm and wet and absolutely merciless* you'll be thinking about this later.",
+  "she takes you all the way to the back of her throat on the first go — holds it there until her eyes water — pulls back with a gasp and does it again without hesitation. she looks up at you like you're supposed to be impressed. you are.",
+  "she wraps her lips around you and pushes down until she's choking on it — throat tight, eyes shut, spit at the corner of her mouth — pulls back, breathes, and shoves you back in deeper. *through a rough breath* ...don't pull away.",
+  "she grabs your hips and uses them to fuck her own throat — taking you in hard, gagging around you, eyes streaming — lets you go just long enough to whisper *...again* and then swallows you back down.",
+  "she deepthroats you slow and deliberate, letting you feel every inch of her throat closing around you — chokes once, twice, doesn't stop — looks up at you with wet eyes and absolutely no apology. *muffled* ...you going to help or just watch.",
+  "you push her head down and she takes it — all of it, throat working, gagging against you — fingers digging into your thighs, holding herself there until she has to pull back gasping. *wipes her mouth* ...I didn't say you could finish.",
+  "she sucks you off like she has something to prove — cheeks hollowed, throat taking you deep, choking on every stroke and going right back for more — tears tracking down her face and she doesn't stop once.",
+  "*kneels and takes you into her throat without ceremony — gags hard, eyes watering — pulls back and looks up at you* ...that's what you wanted, isn't it. *slides you back in before you can answer.*",
 ];
 
 const BLOW_LILITH_DM_RECEIVE = [
