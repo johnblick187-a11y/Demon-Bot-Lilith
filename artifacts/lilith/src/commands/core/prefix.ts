@@ -6,13 +6,13 @@ import {
 import {
   setGuildPrefix,
   getGuildPrefix,
-  getTrackedBotPrefix,
-  setTrackedBotPrefix,
+  getUserBotPrefix,
+  setUserBotPrefix,
 } from "../../lib/db.js";
 
 export const data = new SlashCommandBuilder()
   .setName("prefix")
-  .setDescription("Set or view a bot prefix — Lilith's server prefix or another bot's tracked prefix")
+  .setDescription("Set or view a bot prefix — Lilith's server prefix or any individual bot's prefix")
   .addStringOption((opt) =>
     opt
       .setName("new_prefix")
@@ -24,20 +24,19 @@ export const data = new SlashCommandBuilder()
   .addUserOption((opt) =>
     opt
       .setName("user")
-      .setDescription("Target another bot to set/view their tracked prefix instead of Lilith's")
+      .setDescription("The bot whose prefix you want to set or look up (works anywhere, no permissions needed)")
       .setRequired(false)
-  )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  );
 
 export async function execute(interaction: CommandInteraction) {
-  if (!interaction.guildId) {
-    return interaction.reply({ content: "This command is server-only.", ephemeral: true });
-  }
-
   const newPrefix = (interaction.options as any).getString("new_prefix") as string | null;
-  const targetUser = (interaction.options as any).getUser("user") as { id: string; username: string; bot: boolean } | null;
+  const targetUser = (interaction.options as any).getUser("user") as {
+    id: string;
+    username: string;
+    bot: boolean;
+  } | null;
 
-  if (/\s/.test(newPrefix ?? "")) {
+  if (newPrefix && /\s/.test(newPrefix)) {
     return interaction.reply({ content: "Prefix cannot contain spaces.", ephemeral: true });
   }
 
@@ -45,31 +44,52 @@ export async function execute(interaction: CommandInteraction) {
     const displayName = targetUser.username;
 
     if (newPrefix) {
-      await setTrackedBotPrefix(interaction.guildId, targetUser.id, newPrefix, displayName);
-      return interaction.reply(
-        `✅ Tracked prefix for **${displayName}** set to \`${newPrefix}\`.\n` +
-        `I'll remember that **${displayName}** uses \`${newPrefix}\` as their prefix in this server.`
-      );
+      await setUserBotPrefix(interaction.user.id, targetUser.id, newPrefix, displayName);
+      return interaction.reply({
+        content:
+          `✅ Saved — **${displayName}**'s prefix is set to \`${newPrefix}\` in your personal prefix book.\n` +
+          `Look it up anytime with \`/prefix user:${displayName}\`.`,
+        ephemeral: true,
+      });
     } else {
-      const tracked = await getTrackedBotPrefix(interaction.guildId, targetUser.id);
-      if (!tracked) {
+      const saved = await getUserBotPrefix(interaction.user.id, targetUser.id);
+      if (!saved) {
         return interaction.reply({
-          content: `No prefix tracked for **${displayName}** yet. Use \`/prefix new_prefix:[prefix] user:${displayName}\` to set one.`,
+          content:
+            `No prefix saved for **${displayName}** yet.\n` +
+            `Use \`/prefix new_prefix:[prefix] user:${displayName}\` to set one.`,
           ephemeral: true,
         });
       }
-      return interaction.reply(
-        `**${tracked.bot_username ?? displayName}** uses prefix \`${tracked.prefix}\` in this server.`
-      );
+      return interaction.reply({
+        content: `**${saved.bot_username ?? displayName}** uses prefix \`${saved.prefix}\`.`,
+        ephemeral: true,
+      });
     }
   } else {
+    if (!interaction.guildId) {
+      return interaction.reply({
+        content: "Setting Lilith's prefix requires a server. Use the `user` option to track any bot's prefix from anywhere.",
+        ephemeral: true,
+      });
+    }
+
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    const hasPerms = member?.permissions.has(PermissionFlagsBits.ManageGuild) ?? false;
+
     if (newPrefix) {
+      if (!hasPerms) {
+        return interaction.reply({
+          content: "You need Manage Server permission to change Lilith's prefix.",
+          ephemeral: true,
+        });
+      }
       const old = await getGuildPrefix(interaction.guildId);
       await setGuildPrefix(interaction.guildId, newPrefix);
       return interaction.reply(
         `✅ Lilith's prefix changed from \`${old}\` to \`${newPrefix}\`.\n` +
         `Custom prefix commands are now triggered with \`${newPrefix}<command>\`.\n` +
-        `*(Note: commands created with \`/create custom-command\` keep their original prefix regardless.)*`
+        `*(Commands created with \`/create custom-command\` keep their original prefix regardless.)*`
       );
     } else {
       const current = await getGuildPrefix(interaction.guildId);

@@ -71,6 +71,14 @@ export async function initDb() {
       PRIMARY KEY (guild_id, bot_user_id)
     );
 
+    CREATE TABLE IF NOT EXISTS user_bot_prefixes (
+      owner_user_id TEXT NOT NULL,
+      bot_user_id TEXT NOT NULL,
+      prefix TEXT NOT NULL,
+      bot_username TEXT,
+      PRIMARY KEY (owner_user_id, bot_user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS custom_command_usage (
       guild_id TEXT NOT NULL,
       user_id TEXT NOT NULL,
@@ -252,6 +260,31 @@ export async function setTrackedBotPrefix(
      VALUES ($1, $2, $3, $4)
      ON CONFLICT (guild_id, bot_user_id) DO UPDATE SET prefix=$3, bot_username=COALESCE($4, tracked_bot_prefixes.bot_username)`,
     [guildId, botUserId, prefix, botUsername ?? null]
+  );
+}
+
+export async function getUserBotPrefix(
+  ownerUserId: string,
+  botUserId: string
+): Promise<{ prefix: string; bot_username: string | null } | null> {
+  const res = await pool.query(
+    `SELECT prefix, bot_username FROM user_bot_prefixes WHERE owner_user_id=$1 AND bot_user_id=$2`,
+    [ownerUserId, botUserId]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function setUserBotPrefix(
+  ownerUserId: string,
+  botUserId: string,
+  prefix: string,
+  botUsername?: string
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO user_bot_prefixes (owner_user_id, bot_user_id, prefix, bot_username)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (owner_user_id, bot_user_id) DO UPDATE SET prefix=$3, bot_username=COALESCE($4, user_bot_prefixes.bot_username)`,
+    [ownerUserId, botUserId, prefix, botUsername ?? null]
   );
 }
 
