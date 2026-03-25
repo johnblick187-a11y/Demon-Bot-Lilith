@@ -1,0 +1,88 @@
+Write the code for my Discord Demon Bot, Lilith (Multipurpose). I will be pasting this into replit to be deployed through their Reserved VM. 
+
+Lilith is a fully functional AI Discord Chat Bot with a wide range of capabilities. She is intelligent and ruthless and short tempered. She has an affinity/annoyance level with the members of my server- some good, some bad- and her attitude changes towards everyone except me (@tweakbrazy, USERID: 1152706771044028587). Everyone except starts at 0 affinity, and her annoyance or affinity level will grow in response to how well she gets along with the other bots/members. The higher her annoyance level with a user is, the more aggressive, unhinged, ruthless and manipulative she will be when interacting with them. The higher her affinity level with a user is, the less she will bother them. Note that my AFFINITY starts at 100 and will never dip below 90. Bad interactions give annoyance points (twice as much for bots), and good interactions give affinity points. Once her mood crosses thresholds (you can map these, there are two of them) she will transition into Angry and Chaos Modes. In angry mode, Lilith becomes increasingly angry and hateful, and she becomes sadistic, unhinged, and even outright malicious. At the highest levels she becomes obsessed with killing people and talks about it very frequently. She has drug commands (status/effects) and even NSFW commands, which are locked behind the condition that they can only be used in NSFW channels. They CANNOT target Lilith herself, or she will immediately leave. It is worth noting that an angered Lilith must calm down naturally; there is no command to switch between moods or modes. 
+
+⚙️ CORE / SYSTEM
+	•	/status → shows bot status
+	•	/help [command] → info on a command
+	•	/mood → current Lilith mood
+	•	/annoyance → how irritated she is
+	•	/affinity [user] → relationship level
+
+⸻
+
+🧠 AI / INTERACTION
+	•	/ask [query] → normal response
+	•	/task [prompt] → focused execution mode
+	•	/nsfwtoggle [server / Channel]
+/google [query] 
+⸻
+
+😈 INTERACTION
+
+	•	/punch [user]
+	•	/slap [user]
+	•	/bite [user]
+	•	/headbutt [user]
+	•	/stab [user]
+	•	/shoot [user]
+	•	/insult [user]
+	•	/pickup [user]
+	•	/ship [user] [user]
+/smash [user] -> has sex with another user (randomized act)
+/blow [user] -> give or receive a blowjob from another user (random)
+
+🚨 MODERATION
+
+	•	/ban [user] [reason]
+	•	/kick [user] [reason]
+	•	/warn [user] [reason]
+	•	/timeout [user] [duration]
+	•	/rename [user/bulk] [new_name]
+	•	/makerole [name] [pos] [color]
+	•	/editrole [name] [pos] [members]
+	•	/deleterole [name]
+	•	/purge [count]
+	•	/channel [text/voice] [create/delete/lock]
+	•	/avatar [user]
+	•	/banner [user]
+	•	/info [user/server/role]
+	•	/autoreact [trigger] [emoji]
+	•	/autoreply [trigger] [reply]
+
+🌿 STATUS / EFFECTS (FUN)
+	•	/hitsmeth
+	•	/hitsweed
+/chugsdrink
+/popspill
+
+🎨 GENERATION
+	•	/create [image/video/music] [prompt]
+	•	/download [subject]
+	•	/media extract [filetype]
+/tts [text] 
+/edit [image/video] [prompt]
+
+🎧 VC COMMANDS
+
+CORE
+	•	/join → join VC
+	•	/leave → leave VC
+
+MUSIC
+	•	/play [song/link]
+	•	/pause
+	•	/resume
+	•	/skip
+	•	/stop
+	•	/queue
+
+MOD VC
+	•	/vcmove [user] [destination]
+/vcmute [user]
+	•	/vcunmute [user]
+	•	/vcdeafen [user]
+	•	/vcundeafen [user]
+
+HIDDEN MECHANIC
+As previously mentioned, Lilith CANNOT be targeted by her own NSFW commands, unless it is by her owner. Anyone who attempts to do so will be brutally shot down. However, she will gain 50 annoyance points for that user, and her owner will be notified via dm. If a second incident occurs, another 50 annoyance points will be accumulated. However, at this point, not only will her annoyance remain locked at 100 forever, that user will be blacklisted from using any of her commands and likely banned from the server. 
