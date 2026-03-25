@@ -8,18 +8,23 @@ import {
 import { getRelation, updateRelation } from "../../lib/db.js";
 import { OWNER_ID, ANNOYANCE_TABLE, AFFINITY_TABLE, BOT_MULTIPLIER } from "../../lib/constants.js";
 
-async function fetchGif(query: string): Promise<string | null> {
-  try {
-    const url = `https://api.tenor.com/v1/search?q=${encodeURIComponent(query)}&key=LIVDSRZULELA&contentfilter=off&limit=20&media_filter=minimal`;
-    const res = await fetch(url);
-    const data = await res.json() as any;
-    const results = data?.results;
-    if (!results?.length) return null;
-    const item = results[Math.floor(Math.random() * results.length)];
-    return item?.media?.[0]?.gif?.url ?? null;
-  } catch {
-    return null;
-  }
+async function fetchGif(query: string, fallbackQuery?: string): Promise<string | null> {
+  const tryFetch = async (q: string): Promise<string | null> => {
+    try {
+      const url = `https://api.tenor.com/v1/search?q=${encodeURIComponent(q)}&key=LIVDSRZULELA&contentfilter=off&limit=20`;
+      const res = await fetch(url);
+      const data = await res.json() as any;
+      const results = data?.results;
+      if (!results?.length) return null;
+      const item = results[Math.floor(Math.random() * results.length)];
+      const media = item?.media?.[0];
+      if (!media) return null;
+      return media.gif?.url ?? media.tinygif?.url ?? media.nanogif?.url ?? media.mediumgif?.url ?? null;
+    } catch {
+      return null;
+    }
+  };
+  return (await tryFetch(query)) ?? (fallbackQuery ? await tryFetch(fallbackQuery) : null);
 }
 
 const VIOLENT_ACTIONS = ["punch", "slap", "headbutt", "stab", "shoot", "insult", "bite"];
