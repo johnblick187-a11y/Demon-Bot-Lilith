@@ -1,5 +1,5 @@
 import { SlashCommandBuilder, CommandInteraction, Client, PermissionFlagsBits } from "discord.js";
-import { getRelation, updateRelation, getGuildSettings, blacklistUser, lockAnnoyance } from "../../lib/db.js";
+import { getRelation, updateRelation, getGuildSettings, blacklistUser } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
 const SMASH_ACTS = [
@@ -8,6 +8,14 @@ const SMASH_ACTS = [
   "{actor} and {target} disappear into a private channel. Everyone knows what's happening.",
   "{actor} drags {target} away from the crowd. Both return looking disheveled.",
   "{actor} whispers something in {target}'s ear. {target} goes scarlet. They leave together.",
+];
+
+const SMASH_LILITH_DM = [
+  "*lets you.* Don't make it weird. ...weirder.",
+  "Fine. But only because it's you. And only here.",
+  "*says nothing. Just pulls you closer.*",
+  "You know I only do this for you. Don't forget that.",
+  "*pins you against the wall* ...you were saying?",
 ];
 
 const BLOW_ACTS_AB = [
@@ -20,6 +28,14 @@ const BLOW_ACTS_BA = [
   "{target} returns the favor to {actor}. Enthusiastically.",
   "{actor} leans back while {target} takes care of things. Efficient.",
   "{target} goes down on {actor}. Everyone else pretends not to notice.",
+];
+
+const BLOW_LILITH_DM = [
+  "*drops to her knees without a word. Just for you.*",
+  "Only you get this. Remember that.",
+  "*looks up at you* ...don't make me say it out loud.",
+  "Fine. *kneels* You never saw this side of me.",
+  "*pulls you down with her* — you started this.",
 ];
 
 async function isNsfwAllowed(guildId: string, channelId: string): Promise<boolean> {
@@ -48,7 +64,16 @@ async function handleNsfwOnLilith(
   if (target.id !== client.user?.id) return false;
 
   const userId = interaction.user.id;
-  if (userId === OWNER_ID) return false;
+  const inDM = !interaction.guild;
+
+  if (userId === OWNER_ID) {
+    if (inDM) return false;
+    await interaction.reply({
+      content: `Not here. You know where.`,
+      ephemeral: true,
+    });
+    return true;
+  }
 
   const rel = await getRelation(userId, interaction.user.username);
   const incidentCount = rel.nsfw_incident_count + 1;
@@ -74,9 +99,9 @@ async function lockAnnoyanceAndNotify(
   client: Client,
   bannedCount: number = 0
 ) {
-  const pool = await import("../../lib/db.js");
+  const { pool } = await import("../../lib/db.js");
 
-  await pool.pool.query(
+  await pool.query(
     `UPDATE user_relations SET nsfw_incident_count = nsfw_incident_count + 1 WHERE user_id = $1`,
     [userId]
   );
@@ -111,20 +136,27 @@ export const smashData = new SlashCommandBuilder()
   );
 
 export async function executeSmash(interaction: CommandInteraction, client: Client) {
-  if (!interaction.guild) return interaction.reply({ content: "Server only.", ephemeral: true });
-
-  const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
-  if (!nsfw)
-    return interaction.reply({ content: "NSFW commands aren't enabled here. Enable them first.", ephemeral: true });
-
-  const blocked = await handleNsfwOnLilith(interaction, client);
-  if (blocked) return;
-
   const target = (interaction.options as any).getUser("user", true);
   const userId = interaction.user.id;
 
+  if (target.id === client.user?.id) {
+    const blocked = await handleNsfwOnLilith(interaction, client);
+    if (blocked) return;
+    const act = SMASH_LILITH_DM[Math.floor(Math.random() * SMASH_LILITH_DM.length)];
+    return interaction.reply(`🖤 ${act}`);
+  }
+
+  if (!interaction.guild) {
+    return interaction.reply({ content: "Server only.", flags: 64 });
+  }
+
+  const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
+  if (!nsfw) {
+    return interaction.reply({ content: "NSFW commands aren't enabled here. Enable them first.", flags: 64 });
+  }
+
   const rel = await getRelation(userId, interaction.user.username);
-  if (rel.blacklisted) return interaction.reply({ content: "You're blacklisted. You don't get commands.", ephemeral: true });
+  if (rel.blacklisted) return interaction.reply({ content: "You're blacklisted. You don't get commands.", flags: 64 });
 
   const act = SMASH_ACTS[Math.floor(Math.random() * SMASH_ACTS.length)]
     .replace("{actor}", `**${interaction.user.username}**`)
@@ -141,20 +173,27 @@ export const blowData = new SlashCommandBuilder()
   );
 
 export async function executeBlow(interaction: CommandInteraction, client: Client) {
-  if (!interaction.guild) return interaction.reply({ content: "Server only.", ephemeral: true });
-
-  const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
-  if (!nsfw)
-    return interaction.reply({ content: "NSFW commands aren't enabled here.", ephemeral: true });
-
-  const blocked = await handleNsfwOnLilith(interaction, client);
-  if (blocked) return;
-
   const target = (interaction.options as any).getUser("user", true);
   const userId = interaction.user.id;
 
+  if (target.id === client.user?.id) {
+    const blocked = await handleNsfwOnLilith(interaction, client);
+    if (blocked) return;
+    const act = BLOW_LILITH_DM[Math.floor(Math.random() * BLOW_LILITH_DM.length)];
+    return interaction.reply(`🖤 ${act}`);
+  }
+
+  if (!interaction.guild) {
+    return interaction.reply({ content: "Server only.", flags: 64 });
+  }
+
+  const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
+  if (!nsfw) {
+    return interaction.reply({ content: "NSFW commands aren't enabled here.", flags: 64 });
+  }
+
   const rel = await getRelation(userId, interaction.user.username);
-  if (rel.blacklisted) return interaction.reply({ content: "You're blacklisted.", ephemeral: true });
+  if (rel.blacklisted) return interaction.reply({ content: "You're blacklisted.", flags: 64 });
 
   const isAtoB = Math.random() > 0.5;
   const pool = isAtoB ? BLOW_ACTS_AB : BLOW_ACTS_BA;
