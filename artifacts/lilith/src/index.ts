@@ -22,6 +22,7 @@ import * as enemy from "./commands/core/enemy.js";
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
 import * as nsfwtoggle from "./commands/ai/nsfwtoggle.js";
+import * as chattoggle from "./commands/ai/chattoggle.js";
 import * as google from "./commands/ai/google.js";
 
 import { commands as actionCommands, execute as executeAction } from "./commands/interaction/actions.js";
@@ -112,6 +113,7 @@ const allCommandDefs: any[] = [
   ask.data,
   task.data,
   nsfwtoggle.data,
+  chattoggle.data,
   google.data,
   ship.data,
   smashData,
@@ -166,6 +168,7 @@ commandMap.set("enemy", (i) => enemy.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));
+commandMap.set("chattoggle", (i) => chattoggle.execute(i));
 commandMap.set("google", (i) => google.execute(i));
 commandMap.set("ship", (i) => ship.execute(i));
 commandMap.set("smash", (i, c) => executeSmash(i, c));

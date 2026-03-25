@@ -25,8 +25,11 @@ export async function initDb() {
     CREATE TABLE IF NOT EXISTS guild_settings (
       guild_id TEXT PRIMARY KEY,
       nsfw_enabled BOOLEAN NOT NULL DEFAULT FALSE,
-      nsfw_channels TEXT[] NOT NULL DEFAULT '{}'
+      nsfw_channels TEXT[] NOT NULL DEFAULT '{}',
+      chat_enabled BOOLEAN NOT NULL DEFAULT TRUE
     );
+
+    ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS chat_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 
     CREATE TABLE IF NOT EXISTS autoreacts (
       id SERIAL PRIMARY KEY,
@@ -248,6 +251,27 @@ export async function setNsfwEnabled(guildId: string, enabled: boolean) {
   await pool.query(
     `INSERT INTO guild_settings (guild_id, nsfw_enabled) VALUES ($1, $2)
      ON CONFLICT (guild_id) DO UPDATE SET nsfw_enabled=$2`,
+    [guildId, enabled]
+  );
+}
+
+export async function getChatEnabled(guildId: string): Promise<boolean> {
+  const res = await pool.query(
+    `INSERT INTO guild_settings (guild_id) VALUES ($1)
+     ON CONFLICT (guild_id) DO NOTHING`,
+    [guildId]
+  );
+  const r = await pool.query(
+    `SELECT chat_enabled FROM guild_settings WHERE guild_id=$1`,
+    [guildId]
+  );
+  return r.rows[0]?.chat_enabled ?? true;
+}
+
+export async function setChatEnabled(guildId: string, enabled: boolean) {
+  await pool.query(
+    `INSERT INTO guild_settings (guild_id, chat_enabled) VALUES ($1, $2)
+     ON CONFLICT (guild_id) DO UPDATE SET chat_enabled=$2`,
     [guildId, enabled]
   );
 }

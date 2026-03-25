@@ -9,6 +9,7 @@ import {
   getCustomCommands,
   canUseCustomCommandToday,
   recordCustomCommandUsage,
+  getChatEnabled,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
 import { askLilith, computeMode } from "../lib/ai.js";
@@ -132,6 +133,9 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
   if (content.trim().length < 8) return;
   if (effectivePrefix && content.startsWith(effectivePrefix)) return;
+
+  const chatEnabled = await getChatEnabled(message.guild.id);
+  if (!chatEnabled) return;
 
   const isOwner = userId === OWNER_ID;
   const rel = isOwner
