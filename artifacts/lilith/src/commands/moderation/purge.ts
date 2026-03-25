@@ -23,12 +23,6 @@ export const data = new SlashCommandBuilder()
       .setRequired(false)
       .setMinValue(1)
   )
-  .addUserOption((opt) =>
-    opt
-      .setName("user")
-      .setDescription("Only delete messages from this user")
-      .setRequired(false)
-  )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
 
 export async function execute(interaction: CommandInteraction) {
@@ -38,19 +32,16 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   const limit = (interaction.options as any).getInteger("count") as number | null;
-  const targetUser = (interaction.options as any).getUser("user") as { id: string; username: string } | null;
 
   await interaction.deferReply({ ephemeral: true });
 
   const label = limit ? `${limit.toLocaleString()} messages` : "all messages";
-  const userLabel = targetUser ? ` from **${targetUser.username}**` : "";
-  await interaction.editReply(`🔥 Purging ${label}${userLabel}… stand back.`);
+  await interaction.editReply(`🔥 Purging ${label}… stand back.`);
 
   let totalDeleted = 0;
   let before: string | undefined;
-  let done = false;
 
-  while (!done) {
+  while (true) {
     const remaining = limit ? limit - totalDeleted : Infinity;
     if (remaining <= 0) break;
 
@@ -63,19 +54,9 @@ export async function execute(interaction: CommandInteraction) {
 
     if (batch.size === 0) break;
 
-    const filtered = targetUser
-      ? batch.filter((m) => m.author.id === targetUser.id)
-      : batch;
-
-    if (filtered.size === 0) {
-      before = batch.last()?.id;
-      if (batch.size < fetchLimit) break;
-      continue;
-    }
-
     const now = Date.now();
-    const recent = filtered.filter((m) => now - m.createdTimestamp < FOURTEEN_DAYS);
-    const old = filtered.filter((m) => now - m.createdTimestamp >= FOURTEEN_DAYS);
+    const recent = batch.filter((m) => now - m.createdTimestamp < FOURTEEN_DAYS);
+    const old = batch.filter((m) => now - m.createdTimestamp >= FOURTEEN_DAYS);
 
     if (recent.size >= 2) {
       try {
@@ -107,6 +88,6 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   await interaction.editReply(
-    `✅ Done. **${totalDeleted.toLocaleString()}** message${totalDeleted !== 1 ? "s" : ""} deleted${userLabel}.`
+    `✅ Done. **${totalDeleted.toLocaleString()}** message${totalDeleted !== 1 ? "s" : ""} deleted.`
   ).catch(() => {});
 }
