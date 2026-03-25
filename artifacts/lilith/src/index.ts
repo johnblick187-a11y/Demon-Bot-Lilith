@@ -31,8 +31,6 @@ import {
   executeSmash,
   blowData,
   executeBlow,
-  eatData,
-  executeEat,
 } from "./commands/interaction/nsfw_actions.js";
 
 import * as ban from "./commands/moderation/ban.js";
@@ -118,7 +116,6 @@ const allCommandDefs: any[] = [
   ship.data,
   smashData,
   blowData,
-  eatData,
   ban.data,
   kick.data,
   warn.data,
@@ -173,7 +170,6 @@ commandMap.set("google", (i) => google.execute(i));
 commandMap.set("ship", (i) => ship.execute(i));
 commandMap.set("smash", (i, c) => executeSmash(i, c));
 commandMap.set("blow", (i, c) => executeBlow(i, c));
-commandMap.set("eat", (i, c) => executeEat(i, c));
 commandMap.set("ban", (i) => ban.execute(i));
 commandMap.set("kick", (i) => kick.execute(i));
 commandMap.set("warn", (i) => warn.execute(i));

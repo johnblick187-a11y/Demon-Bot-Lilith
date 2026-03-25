@@ -54,12 +54,20 @@ const BLOW_ACTS_BA = [
   "{target} goes down on {actor}. Everyone else pretends not to notice.",
 ];
 
-const BLOW_LILITH_DM = [
+const BLOW_LILITH_DM_GIVE = [
   "*drops to her knees without a word. Just for you.*",
   "Only you get this. Remember that.",
-  "*looks up at you* ...don't make me say it out loud.",
+  "*looks up at you with heavy eyes* ...don't make me say it out loud.",
   "Fine. *kneels* You never saw this side of me.",
-  "*pulls you down with her* — you started this.",
+  "*takes her time. unhurried. deliberate.* you're not going anywhere.",
+];
+
+const BLOW_LILITH_DM_RECEIVE = [
+  "*grabs the sheets. says nothing. says everything.*",
+  "*breathes through it, slow* ...don't stop. I mean it.",
+  "*thighs close around your head* you're not going anywhere.",
+  "*looks down at you with heavy eyes* ...good.",
+  "*arches back without a word. you've made your point.*",
 ];
 
 async function isNsfwAllowed(guildId: string, channelId: string): Promise<boolean> {
@@ -184,7 +192,7 @@ export async function executeSmash(interaction: CommandInteraction, client: Clie
     .replace("{actor}", `**${interaction.user.username}**`)
     .replace("{target}", `**${target.username}**`);
 
-  await interaction.reply(`🔥 ${act}`);
+  await replyWithGif(interaction, `🔥 ${act}`, "hentai sex");
 }
 
 export const blowData = new SlashCommandBuilder()
@@ -201,8 +209,11 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
   if (target.id === client.user?.id) {
     const blocked = await handleNsfwOnLilith(interaction, client);
     if (blocked) return;
-    const act = BLOW_LILITH_DM[Math.floor(Math.random() * BLOW_LILITH_DM.length)];
-    return replyWithGif(interaction, `🖤 ${act}`, "hentai blowjob deepthroat");
+    const giving = Math.random() > 0.5;
+    const pool = giving ? BLOW_LILITH_DM_GIVE : BLOW_LILITH_DM_RECEIVE;
+    const act = pool[Math.floor(Math.random() * pool.length)];
+    const gifQuery = giving ? "hentai blowjob deepthroat" : "hentai cunnilingus";
+    return replyWithGif(interaction, `🖤 ${act}`, gifQuery);
   }
 
   if (interaction.guild) {
@@ -221,55 +232,5 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
     .replace("{actor}", `**${interaction.user.username}**`)
     .replace("{target}", `**${target.username}**`);
 
-  await interaction.reply(`💋 ${act}`);
-}
-
-const EAT_ACTS = [
-  "{actor} goes down on {target} without warning. {target} did not object.",
-  "{target} grabs {actor}'s head and keeps them there. Nobody's complaining.",
-  "{actor} takes their time with {target}. An unreasonable amount of time.",
-  "{target}'s knees give out. {actor} is not apologetic about this.",
-];
-
-const EAT_LILITH_DM = [
-  "*grabs the sheets. says nothing. says everything.*",
-  "*breathes through it, slow* ...don't stop. I mean it.",
-  "*thighs close around your head* you're not going anywhere.",
-  "*looks down at you with heavy eyes* ...good.",
-  "*arches back without a word. you've made your point.*",
-];
-
-export const eatData = new SlashCommandBuilder()
-  .setName("eat")
-  .setDescription("Go down on a user (NSFW)")
-  .addUserOption((opt) =>
-    opt.setName("user").setDescription("Target user").setRequired(true)
-  );
-
-export async function executeEat(interaction: CommandInteraction, client: Client) {
-  const target = (interaction.options as any).getUser("user", true);
-  const userId = interaction.user.id;
-
-  if (target.id === client.user?.id) {
-    const blocked = await handleNsfwOnLilith(interaction, client);
-    if (blocked) return;
-    const act = EAT_LILITH_DM[Math.floor(Math.random() * EAT_LILITH_DM.length)];
-    return replyWithGif(interaction, `🖤 ${act}`, "hentai cunnilingus");
-  }
-
-  if (interaction.guild) {
-    const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
-    if (!nsfw) {
-      return interaction.reply({ content: "NSFW commands aren't enabled here.", flags: 64 });
-    }
-  }
-
-  const rel = await getRelation(userId, interaction.user.username);
-  if (rel.blacklisted) return interaction.reply({ content: "You're blacklisted.", flags: 64 });
-
-  const act = EAT_ACTS[Math.floor(Math.random() * EAT_ACTS.length)]
-    .replace("{actor}", `**${interaction.user.username}**`)
-    .replace("{target}", `**${target.username}**`);
-
-  await interaction.reply(`👅 ${act}`);
+  await replyWithGif(interaction, `💋 ${act}`, "hentai oral");
 }
