@@ -108,6 +108,22 @@ export async function initDb() {
     ALTER TABLE user_relations ADD COLUMN IF NOT EXISTS enemy BOOLEAN NOT NULL DEFAULT FALSE;
     ALTER TABLE user_relations ADD COLUMN IF NOT EXISTS last_annoyance_update TIMESTAMPTZ NOT NULL DEFAULT NOW();
   `);
+
+  const { OWNER_ID, LORE_ENEMIES } = await import("./constants.js");
+
+  await pool.query(`
+    INSERT INTO user_relations (user_id, username, affinity, annoyance)
+    VALUES ($1, 'tweakbrazy', 100, 0)
+    ON CONFLICT (user_id) DO NOTHING
+  `, [OWNER_ID]);
+
+  for (const enemy of LORE_ENEMIES) {
+    await pool.query(`
+      INSERT INTO user_relations (user_id, username, affinity, annoyance, annoyance_locked, enemy)
+      VALUES ($1, $2, -100, 100, TRUE, TRUE)
+      ON CONFLICT (user_id) DO UPDATE SET enemy = TRUE, annoyance_locked = TRUE, affinity = -100, annoyance = 100
+    `, [enemy.id, enemy.username]);
+  }
 }
 
 export async function getRelation(userId: string, username?: string) {

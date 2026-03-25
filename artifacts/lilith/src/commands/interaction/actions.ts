@@ -6,7 +6,7 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 import { getRelation, updateRelation } from "../../lib/db.js";
-import { OWNER_ID } from "../../lib/constants.js";
+import { OWNER_ID, ANNOYANCE_TABLE, AFFINITY_TABLE, BOT_MULTIPLIER } from "../../lib/constants.js";
 
 const VIOLENT_ACTIONS = ["punch", "slap", "headbutt", "stab", "shoot", "insult", "bite"];
 
@@ -79,7 +79,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} clocks {target} right in the jaw. Satisfying.",
       "{actor} swings on {target}. Clean hit.",
     ],
-    annoyanceDelta: 3,
+    annoyanceDelta: ANNOYANCE_TABLE.punch,
   },
   {
     name: "slap",
@@ -90,7 +90,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} delivers a sharp slap to {target}. *crack*",
       "{actor} backhands {target} clean across the face.",
     ],
-    annoyanceDelta: 2,
+    annoyanceDelta: ANNOYANCE_TABLE.slap,
   },
   {
     name: "bite",
@@ -101,7 +101,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} sinks teeth into {target}'s shoulder. A warning.",
       "{actor} bites {target}. Don't ask why. Just accept it.",
     ],
-    affinityDelta: 2,
+    affinityDelta: AFFINITY_TABLE.bite,
   },
   {
     name: "headbutt",
@@ -112,7 +112,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} slams their head into {target}'s face. Both dazed.",
       "{actor} delivers a brutal headbutt to {target}.",
     ],
-    annoyanceDelta: 1,
+    annoyanceDelta: ANNOYANCE_TABLE.headbutt,
   },
   {
     name: "stab",
@@ -123,7 +123,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} slides a blade into {target}'s side. *with feeling*",
       "{actor} stabs {target}. Clean, efficient, personal.",
     ],
-    annoyanceDelta: 5,
+    annoyanceDelta: ANNOYANCE_TABLE.stab,
   },
   {
     name: "shoot",
@@ -134,7 +134,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} pulls the trigger on {target}. Bang.",
       "{actor} shoots {target} without blinking.",
     ],
-    annoyanceDelta: 5,
+    annoyanceDelta: ANNOYANCE_TABLE.shoot,
   },
   {
     name: "insult",
@@ -146,7 +146,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} looks {target} dead in the eyes and says 'you disappoint every room you walk into.'",
       "{actor} tells {target}: 'You have the energy of a damp sock.'",
     ],
-    annoyanceDelta: 3,
+    annoyanceDelta: ANNOYANCE_TABLE.insult,
   },
   {
     name: "pickup",
@@ -158,7 +158,7 @@ const ACTIONS: ActionDef[] = [
       "{actor} to {target}: 'I'd sell my soul for a conversation with you.'",
       "{actor} to {target}: 'Hell must be missing an angel... wait, wrong vibe. Missing a demon.'",
     ],
-    affinityDelta: 3,
+    affinityDelta: AFFINITY_TABLE.pickup,
   },
 ];
 
@@ -176,6 +176,8 @@ export async function execute(interaction: CommandInteraction, action: ActionDef
   const target = (interaction.options as any).getUser("user", true);
   const actorId = interaction.user.id;
   const actorName = interaction.user.username;
+  const isBot = interaction.user.bot ?? false;
+  const multiplier = isBot ? BOT_MULTIPLIER : 1;
 
   if (client) {
     const intercepted = await interceptOwnerAttack(interaction, actorName, action.name, client);
@@ -191,7 +193,7 @@ export async function execute(interaction: CommandInteraction, action: ActionDef
     await updateRelation(actorId, { affinity: action.affinityDelta });
   }
   if (action.annoyanceDelta) {
-    await updateRelation(actorId, { annoyance: action.annoyanceDelta });
+    await updateRelation(actorId, { annoyance: action.annoyanceDelta * multiplier });
   }
 
   await interaction.reply(`${action.emoji} ${phrase}`);

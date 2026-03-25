@@ -9,11 +9,35 @@ import {
   canUseCustomCommandToday,
   recordCustomCommandUsage,
 } from "../lib/db.js";
-import { OWNER_ID } from "../lib/constants.js";
+import { OWNER_ID, BOT_MULTIPLIER } from "../lib/constants.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
-  if (message.author.bot) return;
   if (!message.guild) return;
+
+  if (message.author.bot) {
+    if (message.author.id === client.user?.id) return;
+    const contentLower = message.content.toLowerCase();
+    const reacts = await getAutoreacts(message.guild.id);
+    const replies = await getAutoreplies(message.guild.id);
+    let triggered = false;
+    for (const react of reacts) {
+      if (contentLower.includes(react.trigger)) {
+        try { await message.react(react.emoji); } catch {}
+        triggered = true;
+      }
+    }
+    for (const reply of replies) {
+      if (contentLower.includes(reply.trigger)) {
+        await message.reply(reply.reply);
+        triggered = true;
+        break;
+      }
+    }
+    if (triggered) {
+      await updateRelation(message.author.id, { annoyance: 1 * BOT_MULTIPLIER });
+    }
+    return;
+  }
 
   const userId = message.author.id;
   const content = message.content;
