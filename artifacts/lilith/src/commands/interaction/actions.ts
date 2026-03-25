@@ -8,6 +8,20 @@ import {
 import { getRelation, updateRelation } from "../../lib/db.js";
 import { OWNER_ID, ANNOYANCE_TABLE, AFFINITY_TABLE, BOT_MULTIPLIER } from "../../lib/constants.js";
 
+async function fetchGif(query: string): Promise<string | null> {
+  try {
+    const url = `https://api.tenor.com/v1/search?q=${encodeURIComponent(query)}&key=LIVDSRZULELA&contentfilter=off&limit=20&media_filter=minimal`;
+    const res = await fetch(url);
+    const data = await res.json() as any;
+    const results = data?.results;
+    if (!results?.length) return null;
+    const item = results[Math.floor(Math.random() * results.length)];
+    return item?.media?.[0]?.gif?.url ?? null;
+  } catch {
+    return null;
+  }
+}
+
 const VIOLENT_ACTIONS = ["punch", "slap", "headbutt", "stab", "shoot", "insult", "bite"];
 
 const RETALIATION_MSGS = [
@@ -67,6 +81,7 @@ type ActionDef = {
   affinityDelta?: number;
   annoyanceDelta?: number;
   emoji: string;
+  gifQuery?: string;
 };
 
 const ACTIONS: ActionDef[] = [
@@ -74,6 +89,7 @@ const ACTIONS: ActionDef[] = [
     name: "punch",
     description: "Punch a user",
     emoji: "👊",
+    gifQuery: "anime punch",
     phrases: [
       "{actor} lands a solid punch on {target}. No hesitation.",
       "{actor} clocks {target} right in the jaw. Satisfying.",
@@ -85,6 +101,7 @@ const ACTIONS: ActionDef[] = [
     name: "slap",
     description: "Slap a user",
     emoji: "👋",
+    gifQuery: "anime slap",
     phrases: [
       "{actor} slaps {target} with the force of accumulated disappointment.",
       "{actor} delivers a sharp slap to {target}. *crack*",
@@ -96,6 +113,7 @@ const ACTIONS: ActionDef[] = [
     name: "bite",
     description: "Bite a user",
     emoji: "🦷",
+    gifQuery: "anime bite",
     phrases: [
       "{actor} bites {target}. Hard. There's blood.",
       "{actor} sinks teeth into {target}'s shoulder. A warning.",
@@ -118,6 +136,7 @@ const ACTIONS: ActionDef[] = [
     name: "stab",
     description: "Stab a user",
     emoji: "🔪",
+    gifQuery: "anime stab",
     phrases: [
       "{actor} stabs {target}. Not fatally. Just... a message.",
       "{actor} slides a blade into {target}'s side. *with feeling*",
@@ -129,6 +148,7 @@ const ACTIONS: ActionDef[] = [
     name: "shoot",
     description: "Shoot a user",
     emoji: "🔫",
+    gifQuery: "anime shoot gun",
     phrases: [
       "{actor} shoots {target}. Just a flesh wound. Probably.",
       "{actor} pulls the trigger on {target}. Bang.",
@@ -164,6 +184,7 @@ const ACTIONS: ActionDef[] = [
     name: "kiss",
     description: "Kiss a user",
     emoji: "💋",
+    gifQuery: "anime kiss",
     phrases: [
       "{actor} kisses {target}. Slow. Deliberate. Like they meant to.",
       "{actor} leans in and kisses {target}. {target} didn't have time to object.",
@@ -177,6 +198,7 @@ const ACTIONS: ActionDef[] = [
     name: "hug",
     description: "Hug a user",
     emoji: "🫂",
+    gifQuery: "anime hug",
     phrases: [
       "{actor} pulls {target} into a hug. Doesn't let go right away.",
       "{actor} wraps their arms around {target}. {target} didn't realize they needed that.",
@@ -222,5 +244,15 @@ export async function execute(interaction: CommandInteraction, action: ActionDef
     await updateRelation(actorId, { annoyance: action.annoyanceDelta * multiplier });
   }
 
-  await interaction.reply(`${action.emoji} ${phrase}`);
+  const content = `${action.emoji} ${phrase}`;
+
+  if (action.gifQuery) {
+    const gifUrl = await fetchGif(action.gifQuery);
+    if (gifUrl) {
+      const embed = new EmbedBuilder().setImage(gifUrl).setColor(0x1a0010);
+      return interaction.reply({ content, embeds: [embed] });
+    }
+  }
+
+  await interaction.reply(content);
 }
