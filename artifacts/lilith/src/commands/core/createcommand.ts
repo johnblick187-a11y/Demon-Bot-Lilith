@@ -2,43 +2,50 @@ import {
   SlashCommandBuilder,
   CommandInteraction,
   PermissionFlagsBits,
-  EmbedBuilder,
 } from "discord.js";
-import { addCustomCommand, getCustomCommands } from "../../lib/db.js";
+import { addLockedCustomCommand, getGuildPrefix } from "../../lib/db.js";
 
 export const data = new SlashCommandBuilder()
   .setName("create")
-  .setDescription("Create a custom prefix command or generate AI content")
-  .addStringOption((opt) =>
-    opt
-      .setName("type")
-      .setDescription("What to create")
-      .setRequired(true)
-      .addChoices(
-        { name: "command", value: "command" },
-        { name: "image", value: "image" }
+  .setDescription("Generate an AI image or create a custom server command")
+  .addSubcommand((sub) =>
+    sub
+      .setName("image")
+      .setDescription("Generate an image with DALL-E 3")
+      .addStringOption((opt) =>
+        opt
+          .setName("prompt")
+          .setDescription("What to generate")
+          .setRequired(true)
       )
   )
-  .addStringOption((opt) =>
-    opt
-      .setName("name")
-      .setDescription("Command name (for 'command' type) / image prompt (for 'image' type)")
-      .setRequired(true)
-  )
-  .addStringOption((opt) =>
-    opt
-      .setName("effect")
-      .setDescription("What the command does — the text Lilith responds with (for 'command' type)")
-      .setRequired(false)
+  .addSubcommand((sub) =>
+    sub
+      .setName("custom-command")
+      .setDescription(
+        "Create a custom command with a locked prefix and once-per-day usage limit per user"
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName("name")
+          .setDescription("Command name (letters, numbers, underscores only)")
+          .setRequired(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName("effect")
+          .setDescription("What Lilith responds with when this command is triggered")
+          .setRequired(true)
+      )
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
 
 export async function execute(interaction: CommandInteraction) {
-  const type = (interaction.options as any).getString("type", true) as string;
+  const sub = (interaction.options as any).getSubcommand() as string;
 
-  if (type === "image") {
+  if (sub === "image") {
     await interaction.deferReply();
-    const prompt = (interaction.options as any).getString("name", true) as string;
+    const prompt = (interaction.options as any).getString("prompt", true) as string;
     try {
       const { default: OpenAI } = await import("openai");
       const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
@@ -57,36 +64,31 @@ export async function execute(interaction: CommandInteraction) {
     }
   }
 
-  if (type === "command") {
+  if (sub === "custom-command") {
     if (!interaction.guildId) {
       return interaction.reply({ content: "Server-only command.", ephemeral: true });
     }
 
     const name = (interaction.options as any).getString("name", true) as string;
-    const effect = (interaction.options as any).getString("effect") as string | null;
+    const effect = (interaction.options as any).getString("effect", true) as string;
 
-    if (!effect) {
+    const cleanName = name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
+    if (!cleanName) {
       return interaction.reply({
-        content: "You need to provide an `effect` — the text Lilith will respond with when this command is triggered.",
+        content: "Invalid command name. Use letters, numbers, and underscores only.",
         ephemeral: true,
       });
     }
 
-    const cleanName = name.toLowerCase().replace(/\s+/g, "_").replace(/[^a-z0-9_]/g, "");
-    if (!cleanName) {
-      return interaction.reply({ content: "Invalid command name. Use letters, numbers, and underscores.", ephemeral: true });
-    }
-
-    await addCustomCommand(interaction.guildId, cleanName, effect);
-
-    const prefix = (await import("../../lib/db.js")).getGuildPrefix
-      ? await (await import("../../lib/db.js")).getGuildPrefix(interaction.guildId)
-      : "!";
+    const currentPrefix = await getGuildPrefix(interaction.guildId);
+    await addLockedCustomCommand(interaction.guildId, cleanName, effect, currentPrefix);
 
     await interaction.reply(
-      `✅ Custom command \`${prefix}${cleanName}\` created.\n` +
+      `✅ Custom command \`${currentPrefix}${cleanName}\` created.\n` +
       `**Effect:** ${effect}\n\n` +
-      `Type \`${prefix}${cleanName}\` in any channel to trigger it.`
+      `**Prefix locked to:** \`${currentPrefix}\` *(changing the server prefix won't affect this command)*\n` +
+      `**Daily limit:** Each user can trigger this command once per day.\n\n` +
+      `Type \`${currentPrefix}${cleanName}\` in any channel to use it.`
     );
   }
 }

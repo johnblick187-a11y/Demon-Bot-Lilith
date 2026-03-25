@@ -5,7 +5,9 @@ import {
   getRelation,
   updateRelation,
   getGuildPrefix,
-  getCustomCommand,
+  getCustomCommands,
+  canUseCustomCommandToday,
+  recordCustomCommandUsage,
 } from "../lib/db.js";
 import { OWNER_ID } from "../lib/constants.js";
 
@@ -17,10 +19,11 @@ export async function handleMessageCreate(message: Message, client: Client) {
   const content = message.content;
   const contentLower = content.toLowerCase();
 
-  const [reacts, replies, prefix] = await Promise.all([
+  const [reacts, replies, guildPrefix, allCommands] = await Promise.all([
     getAutoreacts(message.guild.id),
     getAutoreplies(message.guild.id),
     getGuildPrefix(message.guild.id),
+    getCustomCommands(message.guild.id),
   ]);
 
   for (const react of reacts) {
@@ -44,14 +47,26 @@ export async function handleMessageCreate(message: Message, client: Client) {
     }
   }
 
-  if (content.startsWith(prefix)) {
-    const withoutPrefix = content.slice(prefix.length).trim();
-    const commandName = withoutPrefix.split(/\s+/)[0]?.toLowerCase();
-    if (!commandName) return;
+  for (const cmd of allCommands) {
+    const effectivePrefix = cmd.locked_prefix ?? guildPrefix;
+    if (!content.startsWith(effectivePrefix)) continue;
 
-    const effect = await getCustomCommand(message.guild.id, commandName);
-    if (effect) {
-      await message.reply(effect);
+    const withoutPrefix = content.slice(effectivePrefix.length).trim();
+    const commandName = withoutPrefix.split(/\s+/)[0]?.toLowerCase();
+    if (commandName !== cmd.command_name) continue;
+
+    if (cmd.daily_limit) {
+      const allowed = await canUseCustomCommandToday(message.guild.id, userId, cmd.command_name);
+      if (!allowed) {
+        await message.reply(
+          `You've already used \`${effectivePrefix}${cmd.command_name}\` today. Come back tomorrow.`
+        );
+        return;
+      }
+      await recordCustomCommandUsage(message.guild.id, userId, cmd.command_name);
     }
+
+    await message.reply(cmd.effect);
+    return;
   }
 }

@@ -28,7 +28,7 @@ function extractEmojis(content: string): Array<{ name: string; id: string; anima
 
 export const data = new SlashCommandBuilder()
   .setName("stealemoji")
-  .setDescription("Steal custom emoji(s) and add them to a server you manage")
+  .setDescription("Steal custom emoji(s) and add them to a server you manage — scans the entire channel history")
   .addStringOption((opt) =>
     opt
       .setName("server")
@@ -38,7 +38,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt
       .setName("name")
-      .setDescription("Emoji name to target (omit to scan last 2000 messages)")
+      .setDescription("Specific emoji name to find (omit to grab all custom emojis in this channel)")
       .setRequired(false)
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions);
@@ -76,8 +76,11 @@ export async function execute(interaction: CommandInteraction) {
 
   let before: string | undefined;
   let fetched = 0;
+  let batchCount = 0;
 
-  while (fetched < 2000) {
+  await interaction.editReply("🔍 Scanning channel history… this may take a while for large channels.");
+
+  while (true) {
     const batch: Collection<string, Message> = await channel.messages.fetch({
       limit: 100,
       ...(before ? { before } : {}),
@@ -110,26 +113,44 @@ export async function execute(interaction: CommandInteraction) {
     }
 
     fetched += batch.size;
+    batchCount++;
     before = batch.last()?.id;
+
+    if (batchCount % 10 === 0) {
+      await interaction.editReply(
+        `🔍 Scanned ${fetched.toLocaleString()} messages… found ${collected.length} unique emoji(s) so far.`
+      ).catch(() => {});
+    }
+
     if (batch.size < 100) break;
   }
 
   if (collected.length === 0) {
     return interaction.editReply(
       targetName
-        ? `No custom emoji named \`${targetName}\` found in the last ${fetched} messages.`
-        : `No custom emojis found in the last ${fetched} messages.`
+        ? `No custom emoji named \`${targetName}\` found across ${fetched.toLocaleString()} messages.`
+        : `No custom emojis found across ${fetched.toLocaleString()} messages.`
     );
   }
 
-  const guildEmojiSlots = targetGuild.premiumTier === 0 ? 50 : targetGuild.premiumTier === 1 ? 100 : targetGuild.premiumTier === 2 ? 150 : 250;
+  const guildEmojiSlots =
+    targetGuild.premiumTier === 0 ? 50
+    : targetGuild.premiumTier === 1 ? 100
+    : targetGuild.premiumTier === 2 ? 150
+    : 250;
   const existingCount = targetGuild.emojis.cache.size;
   const available = guildEmojiSlots - existingCount;
 
   const toAdd = collected.slice(0, available);
   if (toAdd.length === 0) {
-    return interaction.editReply(`**${targetGuild.name}** has no emoji slots available (${existingCount}/${guildEmojiSlots}).`);
+    return interaction.editReply(
+      `Found ${collected.length} emoji(s) across ${fetched.toLocaleString()} messages, but **${targetGuild.name}** has no slots available (${existingCount}/${guildEmojiSlots}).`
+    );
   }
+
+  await interaction.editReply(
+    `✅ Scan complete — ${fetched.toLocaleString()} messages, ${collected.length} unique emoji(s) found. Adding ${toAdd.length} to **${targetGuild.name}**…`
+  );
 
   const results: string[] = [];
   for (const emoji of toAdd) {
@@ -144,12 +165,16 @@ export async function execute(interaction: CommandInteraction) {
 
   const skipped = collected.length - toAdd.length;
   const summary = [
-    `**Emoji theft results for ${targetGuild.name}:**`,
+    `**Emoji theft results for ${targetGuild.name}** (scanned ${fetched.toLocaleString()} messages):`,
     ...results,
     skipped > 0 ? `\n*${skipped} emoji(s) skipped — not enough slots.*` : "",
   ]
     .filter(Boolean)
     .join("\n");
 
-  await interaction.editReply(summary);
+  const chunks = summary.match(/.{1,1900}/gs) ?? [summary];
+  await interaction.editReply(chunks[0]);
+  for (let i = 1; i < chunks.length; i++) {
+    await interaction.followUp({ content: chunks[i], ephemeral: true });
+  }
 }

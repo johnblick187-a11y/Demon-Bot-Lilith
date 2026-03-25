@@ -20,7 +20,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt
       .setName("name")
-      .setDescription("Sticker name to target (omit to scan last 2000 messages)")
+      .setDescription("Specific sticker name to find (omit to grab all stickers in this channel)")
       .setRequired(false)
   )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions);
@@ -58,8 +58,11 @@ export async function execute(interaction: CommandInteraction) {
 
   let before: string | undefined;
   let fetched = 0;
+  let batchCount = 0;
 
-  while (fetched < 2000) {
+  await interaction.editReply("🔍 Scanning channel history… this may take a while for large channels.");
+
+  while (true) {
     const batch: Collection<string, Message> = await channel.messages.fetch({
       limit: 100,
       ...(before ? { before } : {}),
@@ -86,27 +89,44 @@ export async function execute(interaction: CommandInteraction) {
     }
 
     fetched += batch.size;
+    batchCount++;
     before = batch.last()?.id;
+
+    if (batchCount % 10 === 0) {
+      await interaction.editReply(
+        `🔍 Scanned ${fetched.toLocaleString()} messages… found ${collected.length} sticker(s) so far.`
+      ).catch(() => {});
+    }
+
     if (batch.size < 100) break;
   }
 
   if (collected.length === 0) {
     return interaction.editReply(
       targetName
-        ? `No sticker named \`${targetName}\` found in the last ${fetched} messages.`
-        : `No stealable stickers found in the last ${fetched} messages. (Lottie/Nitro stickers can't be stolen.)`
+        ? `No sticker named \`${targetName}\` found across ${fetched.toLocaleString()} messages.`
+        : `No stealable stickers found across ${fetched.toLocaleString()} messages. (Lottie/Nitro stickers can't be stolen.)`
     );
   }
 
   const maxStickers =
-    targetGuild.premiumTier === 0 ? 5 : targetGuild.premiumTier === 1 ? 15 : targetGuild.premiumTier === 2 ? 30 : 60;
+    targetGuild.premiumTier === 0 ? 5
+    : targetGuild.premiumTier === 1 ? 15
+    : targetGuild.premiumTier === 2 ? 30
+    : 60;
   const existingCount = targetGuild.stickers.cache.size;
   const available = maxStickers - existingCount;
 
   const toAdd = collected.slice(0, available);
   if (toAdd.length === 0) {
-    return interaction.editReply(`**${targetGuild.name}** has no sticker slots available (${existingCount}/${maxStickers}).`);
+    return interaction.editReply(
+      `Found ${collected.length} sticker(s) across ${fetched.toLocaleString()} messages, but **${targetGuild.name}** has no slots available (${existingCount}/${maxStickers}).`
+    );
   }
+
+  await interaction.editReply(
+    `✅ Scan complete — ${fetched.toLocaleString()} messages, ${collected.length} sticker(s) found. Adding ${toAdd.length} to **${targetGuild.name}**…`
+  );
 
   const results: string[] = [];
   for (const sticker of toAdd) {
@@ -125,12 +145,16 @@ export async function execute(interaction: CommandInteraction) {
 
   const skipped = collected.length - toAdd.length;
   const summary = [
-    `**Sticker theft results for ${targetGuild.name}:**`,
+    `**Sticker theft results for ${targetGuild.name}** (scanned ${fetched.toLocaleString()} messages):`,
     ...results,
     skipped > 0 ? `\n*${skipped} sticker(s) skipped — not enough slots.*` : "",
   ]
     .filter(Boolean)
     .join("\n");
 
-  await interaction.editReply(summary);
+  const chunks = summary.match(/.{1,1900}/gs) ?? [summary];
+  await interaction.editReply(chunks[0]);
+  for (let i = 1; i < chunks.length; i++) {
+    await interaction.followUp({ content: chunks[i], ephemeral: true });
+  }
 }
