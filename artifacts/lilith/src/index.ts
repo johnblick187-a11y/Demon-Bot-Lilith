@@ -104,7 +104,7 @@ const allCommandDefs: any[] = [
   mood.data,
   annoyance.data,
   affinity.data,
-  prefix.data,
+  prefix.data, // exported as "editprefix"
   createCommand.data,
   ask.data,
   task.data,
@@ -156,7 +156,7 @@ commandMap.set("help", (i) => help.execute(i));
 commandMap.set("mood", (i) => mood.execute(i));
 commandMap.set("annoyance", (i) => annoyance.execute(i));
 commandMap.set("affinity", (i) => affinity.execute(i));
-commandMap.set("prefix", (i) => prefix.execute(i));
+commandMap.set("editprefix", (i) => prefix.execute(i));
 commandMap.set("create", (i) => createCommand.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
