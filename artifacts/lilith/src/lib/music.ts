@@ -7,6 +7,8 @@ import {
   StreamType,
 } from "@discordjs/voice";
 import play from "play-dl";
+import { spawn } from "child_process";
+import { Readable } from "stream";
 
 interface QueueEntry {
   title: string;
@@ -33,6 +35,18 @@ export function setMusicState(guildId: string, state: GuildMusic) {
 
 export function deleteMusicState(guildId: string) {
   guildMusicMap.delete(guildId);
+}
+
+function streamViaYtDlp(url: string): Readable {
+  const proc = spawn("yt-dlp", [
+    "-f", "bestaudio",
+    "--no-playlist",
+    "-o", "-",
+    "--quiet",
+    url,
+  ]);
+  proc.stderr.on("data", () => {});
+  return proc.stdout as unknown as Readable;
 }
 
 export async function searchAndQueue(
@@ -82,9 +96,9 @@ export async function playNext(guildId: string): Promise<boolean> {
   state.currentSong = next;
 
   try {
-    const stream = await play.stream(next.url, { quality: 2 });
-    const resource = createAudioResource(stream.stream, {
-      inputType: stream.type as StreamType,
+    const stream = streamViaYtDlp(next.url);
+    const resource = createAudioResource(stream, {
+      inputType: StreamType.Arbitrary,
     });
     state.player.play(resource);
     return true;
