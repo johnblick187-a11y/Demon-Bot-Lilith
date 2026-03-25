@@ -146,13 +146,11 @@ export async function executeSmash(interaction: CommandInteraction, client: Clie
     return interaction.reply(`🖤 ${act}`);
   }
 
-  if (!interaction.guild) {
-    return interaction.reply({ content: "Server only.", flags: 64 });
-  }
-
-  const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
-  if (!nsfw) {
-    return interaction.reply({ content: "NSFW commands aren't enabled here. Enable them first.", flags: 64 });
+  if (interaction.guild) {
+    const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
+    if (!nsfw) {
+      return interaction.reply({ content: "NSFW commands aren't enabled here. Enable them first.", flags: 64 });
+    }
   }
 
   const rel = await getRelation(userId, interaction.user.username);
@@ -183,13 +181,11 @@ export async function executeBlow(interaction: CommandInteraction, client: Clien
     return interaction.reply(`🖤 ${act}`);
   }
 
-  if (!interaction.guild) {
-    return interaction.reply({ content: "Server only.", flags: 64 });
-  }
-
-  const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
-  if (!nsfw) {
-    return interaction.reply({ content: "NSFW commands aren't enabled here.", flags: 64 });
+  if (interaction.guild) {
+    const nsfw = await isNsfwAllowed(interaction.guild.id, interaction.channelId);
+    if (!nsfw) {
+      return interaction.reply({ content: "NSFW commands aren't enabled here.", flags: 64 });
+    }
   }
 
   const rel = await getRelation(userId, interaction.user.username);
