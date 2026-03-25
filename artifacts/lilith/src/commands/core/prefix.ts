@@ -4,7 +4,6 @@ import {
   PermissionFlagsBits,
 } from "discord.js";
 import {
-  setGuildPrefix,
   getGuildPrefix,
   getGuildUserPrefix,
   setGuildUserPrefix,
@@ -12,22 +11,21 @@ import {
 
 export const data = new SlashCommandBuilder()
   .setName("changeprefix")
-  .setDescription("Change the command prefix for a specific user in this server")
+  .setDescription("Change the command prefix for yourself or another user in this server")
   .addUserOption((opt) =>
     opt
       .setName("user")
-      .setDescription("The user whose prefix you want to change")
-      .setRequired(true)
+      .setDescription("Who to change the prefix for (defaults to you if not specified)")
+      .setRequired(false)
   )
   .addStringOption((opt) =>
     opt
       .setName("new_prefix")
-      .setDescription("Their new prefix — leave blank to check what prefix they currently use")
+      .setDescription("The new prefix to assign (leave blank to check current prefix)")
       .setRequired(false)
       .setMinLength(1)
       .setMaxLength(5)
-  )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  );
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) {
@@ -37,36 +35,44 @@ export async function execute(interaction: CommandInteraction) {
   const targetUser = (interaction.options as any).getUser("user") as {
     id: string;
     username: string;
-    bot: boolean;
-  };
+  } | null ?? interaction.user;
+
   const newPrefix = (interaction.options as any).getString("new_prefix") as string | null;
 
   if (newPrefix && /\s/.test(newPrefix)) {
     return interaction.reply({ content: "Prefix cannot contain spaces.", ephemeral: true });
   }
 
-  const displayName = targetUser.username;
+  const isSelf = targetUser.id === interaction.user.id;
+  if (!isSelf) {
+    const member = interaction.guild?.members.cache.get(interaction.user.id);
+    if (!member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
+      return interaction.reply({
+        content: "You need Manage Server permission to change someone else's prefix.",
+        ephemeral: true,
+      });
+    }
+  }
+
+  const displayName = (targetUser as any).username ?? (targetUser as any).tag ?? "Unknown";
 
   if (newPrefix) {
     await setGuildUserPrefix(interaction.guildId, targetUser.id, newPrefix);
 
-    const guildDefault = await getGuildPrefix(interaction.guildId);
-    const note = newPrefix === guildDefault
-      ? ` *(same as the server default — their personal prefix is now cleared to the default)*`
-      : ``;
-
+    const who = isSelf ? "Your" : `**${displayName}**'s`;
     return interaction.reply(
-      `✅ **${displayName}**'s prefix in this server is now \`${newPrefix}\`.\n` +
-      `They'll trigger custom commands with \`${newPrefix}<command>\`.${note}`
+      `✅ ${who} prefix in this server is now \`${newPrefix}\`. ` +
+      `Custom commands are triggered with \`${newPrefix}<command>\`.`
     );
   } else {
     const personal = await getGuildUserPrefix(interaction.guildId, targetUser.id);
     const guildDefault = await getGuildPrefix(interaction.guildId);
     const effective = personal ?? guildDefault;
-    const source = personal ? "personal prefix" : "server default";
+    const source = personal ? "personal" : "server default";
 
+    const who = isSelf ? "Your" : `**${displayName}**'s`;
     return interaction.reply({
-      content: `**${displayName}** uses prefix \`${effective}\` in this server *(${source})*.`,
+      content: `${who} current prefix is \`${effective}\` *(${source})*.`,
       ephemeral: true,
     });
   }
