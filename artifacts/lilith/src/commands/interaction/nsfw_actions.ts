@@ -27,47 +27,55 @@ async function replyWithGif(interaction: CommandInteraction, text: string, gifQu
 }
 
 const SMASH_ACTS = [
-  "{actor} bends {target} over the server table. No further details needed.",
-  "{target} finds themselves pinned to the wall by {actor}. Willingly.",
-  "{actor} and {target} disappear into a private channel. Everyone knows what's happening.",
-  "{actor} drags {target} away from the crowd. Both return looking disheveled.",
-  "{actor} whispers something in {target}'s ear. {target} goes scarlet. They leave together.",
+  "{actor} bends {target} over and fucks them from behind, one hand fisted in their hair, the other gripping their hip hard enough to bruise. {target} is not complaining.",
+  "{actor} pins {target} against the wall and slides into them slow — then not slow at all. {target}'s nails drag down the wall.",
+  "{actor} pulls {target} into their lap and rides them until {target} can't form a coherent sentence. Both of them are out of breath.",
+  "{actor} spreads {target} out and takes their time — mouth first, then hands, then everything else. {target} stops pretending they're not into it about halfway through.",
+  "{actor} fucks {target} deep and steady, whispering something in their ear that makes {target}'s whole body shudder. They finish together. Loudly.",
+  "{target} ends up on their back with {actor} between their legs, hitting every spot that matters. The sounds {target} makes are not quiet.",
+  "{actor} and {target} go at it hard enough that something falls off the shelf. Neither of them notices. Neither of them stops.",
 ];
 
 const SMASH_LILITH_DM = [
-  "*lets you.* Don't make it weird. ...weirder.",
-  "Fine. But only because it's you. And only here.",
-  "*says nothing. Just pulls you closer.*",
-  "You know I only do this for you. Don't forget that.",
-  "*pins you against the wall* ...you were saying?",
+  "*lets you bend her over, fingers curling into the sheets* ...don't stop. and don't you dare go easy on me.",
+  "*arches her back into you as you push in deep* ...fine. *breathes out slow* you win. now make it worth it.",
+  "*reaches back and grabs your wrist, keeps you moving* harder. I said harder. *looks back over her shoulder with dark eyes* there.",
+  "you push in from behind and she goes quiet — then lets out a sharp breath — *grips the headboard* ...I hate how good that feels.",
+  "*pressed against the wall with your hips against hers* ...you feel that? *tilts her head back against your shoulder* yeah. just like that.",
+  "*legs spread, taking all of you, nails dragging down your arm* don't slow down. I'll be angry if you slow down.",
+  "*back arching off the mattress as you drive into her* ...god. *exhales through her teeth* only you get this. remember that.",
 ];
 
 const BLOW_ACTS_AB = [
-  "{actor} drops to their knees for {target}. That's all that needs to be said.",
-  "{target} pushes {actor}'s head down. They comply.",
-  "{actor} does things with their mouth that {target} will remember for a while.",
+  "{actor} wraps their lips around {target}'s cock and takes it deep — no hesitation, no warmup. {target} grabs their hair and doesn't let go.",
+  "{actor} goes down on {target}, tongue working slow circles until {target}'s thighs are shaking and their head drops back.",
+  "{actor} takes {target} all the way to the back of their throat and holds it there. {target} makes a sound they'll deny later.",
+  "{actor} gets on their knees and sucks {target} off slow and deliberate, watching their face the whole time. {target} can't look away.",
+  "{actor} deepthroats {target} like they've been thinking about it, hands pinning {target}'s hips down. {target} grips the edge of whatever's nearest.",
 ];
 
 const BLOW_ACTS_BA = [
-  "{target} returns the favor to {actor}. Enthusiastically.",
-  "{actor} leans back while {target} takes care of things. Efficient.",
-  "{target} goes down on {actor}. Everyone else pretends not to notice.",
+  "{target} buries their face between {actor}'s thighs and doesn't come up for air until {actor} is shaking.",
+  "{actor} grabs {target}'s head and pushes them down — {target} takes the hint, tongue first, and {actor}'s eyes roll back.",
+  "{target} eats {actor} out slow, then faster when {actor} stops trying to stay quiet.",
+  "{actor} sits on {target}'s face and grinds down while {target}'s hands grip their thighs and hold on.",
+  "{target} goes down on {actor} with an enthusiasm that makes {actor} forget what they were doing. {actor} finishes hard.",
 ];
 
 const BLOW_LILITH_DM_GIVE = [
-  "*drops to her knees without a word. Just for you.*",
-  "Only you get this. Remember that.",
-  "*looks up at you with heavy eyes* ...don't make me say it out loud.",
-  "Fine. *kneels* You never saw this side of me.",
-  "*takes her time. unhurried. deliberate.* you're not going anywhere.",
+  "*drops to her knees and takes you in her mouth without warning — deep, deliberate, no hesitation* ...you're not going anywhere.",
+  "*wraps her lips around you and takes it slow — tongue tracing the underside all the way down* only you get this. remember that.",
+  "*hollows her cheeks and sucks you off with those heavy, dark eyes looking up at you the whole time* ...don't look away.",
+  "*takes you to the back of her throat and holds it — fingers digging into your thighs* ...there. *pulls back slow* ...again?",
+  "*strokes you once, then her mouth replaces her hand — warm and wet and absolutely merciless* you'll be thinking about this later.",
 ];
 
 const BLOW_LILITH_DM_RECEIVE = [
-  "*grabs the sheets. says nothing. says everything.*",
-  "*breathes through it, slow* ...don't stop. I mean it.",
-  "*thighs close around your head* you're not going anywhere.",
-  "*looks down at you with heavy eyes* ...good.",
-  "*arches back without a word. you've made your point.*",
+  "*thighs close around your head the second your mouth finds her* ...don't stop. *breathes out sharp* I mean it, don't you dare stop.",
+  "*hips roll into your tongue slow, then less slow* ...fine. *grips your hair* right there. don't move.",
+  "*arches her back hard as you eat her out, one hand pressed over her own mouth* ...fuck. *the word barely makes it out*",
+  "*looks down at you between her legs with heavy, dark eyes* ...good. *fingers curl in your hair and pull you closer* deeper.",
+  "*shudders once, then again, thighs trembling against your shoulders* ...you made your point. *breathes through her teeth* now finish it.",
 ];
 
 async function isNsfwAllowed(guildId: string, channelId: string): Promise<boolean> {
