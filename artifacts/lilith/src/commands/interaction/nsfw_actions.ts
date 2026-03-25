@@ -2,9 +2,15 @@ import { SlashCommandBuilder, CommandInteraction, Client, PermissionFlagsBits, E
 import { getRelation, updateRelation, getGuildSettings, blacklistUser } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
-async function fetchAnimeGif(): Promise<string | null> {
+const NSFW_ENDPOINTS = ["blowjob", "blowjob", "blowjob", "waifu", "neko", "trap"];
+
+async function fetchAnimeImage(prefer?: "blowjob" | "any"): Promise<string | null> {
+  const pool = prefer === "blowjob"
+    ? ["blowjob"]
+    : NSFW_ENDPOINTS;
+  const endpoint = pool[Math.floor(Math.random() * pool.length)];
   try {
-    const res = await fetch("https://api.waifu.pics/nsfw/blowjob");
+    const res = await fetch(`https://api.waifu.pics/nsfw/${endpoint}`);
     const data = await res.json() as any;
     return data?.url ?? null;
   } catch {
@@ -13,7 +19,7 @@ async function fetchAnimeGif(): Promise<string | null> {
 }
 
 async function replyWithGif(interaction: CommandInteraction, text: string) {
-  const gifUrl = await fetchAnimeGif();
+  const gifUrl = await fetchAnimeImage();
   const payload = gifUrl
     ? { content: text, embeds: [new EmbedBuilder().setImage(gifUrl).setColor(0x1a0010)] }
     : { content: text };
