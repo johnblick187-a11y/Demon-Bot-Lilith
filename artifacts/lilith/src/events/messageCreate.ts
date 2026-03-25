@@ -11,7 +11,7 @@ import {
   recordCustomCommandUsage,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
-import { askLilith } from "../lib/ai.js";
+import { askLilith, computeMode } from "../lib/ai.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
   if (!message.guild) return;
@@ -129,4 +129,34 @@ export async function handleMessageCreate(message: Message, client: Client) {
     await message.reply(cmd.effect);
     return;
   }
+
+  if (content.trim().length < 8) return;
+  if (effectivePrefix && content.startsWith(effectivePrefix)) return;
+
+  const isOwner = userId === OWNER_ID;
+  const rel = isOwner
+    ? { affinity: 100, annoyance: 0, blacklisted: false, enemy: false }
+    : await getRelation(userId, message.author.username);
+
+  if (rel.blacklisted) return;
+
+  const mode = computeMode(rel.annoyance, rel.affinity, (rel as any).enemy ?? false);
+  const chanceByMode: Record<string, number> = { Default: 0.05, Angry: 0.12, Chaos: 0.22 };
+  const chance = chanceByMode[mode] ?? 0.05;
+
+  if (Math.random() > chance) return;
+
+  try {
+    await message.channel.sendTyping();
+    const response = await askLilith(content.trim(), {
+      userId,
+      username: message.author.username,
+      affinity: rel.affinity,
+      annoyance: rel.annoyance,
+      isOwner,
+      mode: "chat",
+      enemy: (rel as any).enemy ?? false,
+    } as any);
+    await message.reply(response);
+  } catch {}
 }
