@@ -3,9 +3,62 @@ import {
   EmbedBuilder,
   CommandInteraction,
   Client,
+  PermissionFlagsBits,
 } from "discord.js";
 import { getRelation, updateRelation } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
+
+const VIOLENT_ACTIONS = ["punch", "slap", "headbutt", "stab", "shoot", "insult", "bite"];
+
+const RETALIATION_MSGS = [
+  "That's tweakbrazy. **{actor}** just made the worst decision of their server life.",
+  "**{actor}** swung on tweakbrazy. *Interesting choice.* Let me fix that.",
+  "Oh, **{actor}** wants to touch tweakbrazy? Bold. Wrong. Goodbye.",
+  "**{actor}** just signed their own removal order. Nobody touches tweakbrazy.",
+  "Did **{actor}** just—? No. Absolutely not. This ends now.",
+];
+
+async function interceptOwnerAttack(
+  interaction: CommandInteraction,
+  actorName: string,
+  actionName: string,
+  client: Client
+): Promise<boolean> {
+  const target = (interaction.options as any).getUser("user", true);
+  if (target.id !== OWNER_ID) return false;
+  if (interaction.user.id === OWNER_ID) return false;
+  if (!VIOLENT_ACTIONS.includes(actionName)) return false;
+
+  const msg = RETALIATION_MSGS[Math.floor(Math.random() * RETALIATION_MSGS.length)]
+    .replace("{actor}", `**${actorName}**`);
+
+  await interaction.reply(`🩸 ${msg}`);
+
+  const guild = interaction.guild;
+  if (guild) {
+    try {
+      const me = guild.members.me;
+      if (me?.permissions.has(PermissionFlagsBits.BanMembers)) {
+        await guild.bans.create(interaction.user.id, {
+          reason: `Attacked tweakbrazy. Automatic ban by Lilith.`,
+        });
+        await interaction.followUp({ content: `Banned. Don't come back.`, ephemeral: false });
+      } else if (me?.permissions.has(PermissionFlagsBits.KickMembers)) {
+        await guild.members.kick(interaction.user.id, `Attacked tweakbrazy. Kicked by Lilith.`);
+        await interaction.followUp({ content: `Kicked. Consider yourself lucky.`, ephemeral: false });
+      }
+    } catch {}
+  }
+
+  try {
+    const owner = await client.users.fetch(OWNER_ID);
+    await owner.send(
+      `⚠️ **Retaliation Triggered**\n**User:** ${interaction.user.username} (${interaction.user.id})\n**Action:** /${actionName}\n**Server:** ${guild?.name ?? "Unknown"}\n\nLilith intervened.`
+    );
+  } catch {}
+
+  return true;
+}
 
 type ActionDef = {
   name: string;
@@ -119,10 +172,15 @@ export const commands = ACTIONS.map((action) => {
   return { data: builder, action };
 });
 
-export async function execute(interaction: CommandInteraction, action: ActionDef) {
+export async function execute(interaction: CommandInteraction, action: ActionDef, client?: Client) {
   const target = (interaction.options as any).getUser("user", true);
   const actorId = interaction.user.id;
   const actorName = interaction.user.username;
+
+  if (client) {
+    const intercepted = await interceptOwnerAttack(interaction, actorName, action.name, client);
+    if (intercepted) return;
+  }
 
   const phrase =
     action.phrases[Math.floor(Math.random() * action.phrases.length)]

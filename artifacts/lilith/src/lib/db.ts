@@ -17,7 +17,9 @@ export async function initDb() {
       annoyance INTEGER NOT NULL DEFAULT 0,
       annoyance_locked BOOLEAN NOT NULL DEFAULT FALSE,
       blacklisted BOOLEAN NOT NULL DEFAULT FALSE,
-      nsfw_incident_count INTEGER NOT NULL DEFAULT 0
+      nsfw_incident_count INTEGER NOT NULL DEFAULT 0,
+      enemy BOOLEAN NOT NULL DEFAULT FALSE,
+      last_annoyance_update TIMESTAMPTZ NOT NULL DEFAULT NOW()
     );
 
     CREATE TABLE IF NOT EXISTS guild_settings (
@@ -103,6 +105,8 @@ export async function initDb() {
     ALTER TABLE custom_command_usage ADD COLUMN IF NOT EXISTS month_key TEXT;
     ALTER TABLE custom_command_usage ADD COLUMN IF NOT EXISTS use_count INTEGER NOT NULL DEFAULT 1;
     UPDATE custom_command_usage SET month_key = TO_CHAR(used_date, 'YYYY-MM') WHERE month_key IS NULL;
+    ALTER TABLE user_relations ADD COLUMN IF NOT EXISTS enemy BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE user_relations ADD COLUMN IF NOT EXISTS last_annoyance_update TIMESTAMPTZ NOT NULL DEFAULT NOW();
   `);
 }
 
@@ -113,7 +117,23 @@ export async function getRelation(userId: string, username?: string) {
      RETURNING *`,
     [userId, username ?? null]
   );
-  return res.rows[0] as {
+  const row = res.rows[0];
+
+  if (!row.annoyance_locked && row.annoyance > 0) {
+    const hoursSince = (Date.now() - new Date(row.last_annoyance_update).getTime()) / 3600000;
+    if (hoursSince >= 6) {
+      const decay = Math.min(row.annoyance, Math.floor(hoursSince / 6) * 3);
+      if (decay > 0) {
+        await pool.query(
+          `UPDATE user_relations SET annoyance = GREATEST(0, annoyance - $1), last_annoyance_update = NOW() WHERE user_id = $2`,
+          [decay, userId]
+        );
+        row.annoyance = Math.max(0, row.annoyance - decay);
+      }
+    }
+  }
+
+  return row as {
     user_id: string;
     username: string;
     affinity: number;
@@ -121,6 +141,8 @@ export async function getRelation(userId: string, username?: string) {
     annoyance_locked: boolean;
     blacklisted: boolean;
     nsfw_incident_count: number;
+    enemy: boolean;
+    last_annoyance_update: string;
   };
 }
 
@@ -133,14 +155,50 @@ export async function updateRelation(
     return rel;
   }
   const newAffinity = Math.max(-100, Math.min(100, rel.affinity + (delta.affinity ?? 0)));
+  const annoyanceChanged = (delta.annoyance ?? 0) !== 0;
   const newAnnoyance = rel.annoyance_locked
     ? 100
     : Math.max(0, Math.min(100, rel.annoyance + (delta.annoyance ?? 0)));
   const res = await pool.query(
-    `UPDATE user_relations SET affinity=$1, annoyance=$2 WHERE user_id=$3 RETURNING *`,
-    [newAffinity, newAnnoyance, userId]
+    `UPDATE user_relations SET affinity=$1, annoyance=$2, last_annoyance_update = CASE WHEN $4 THEN NOW() ELSE last_annoyance_update END WHERE user_id=$3 RETURNING *`,
+    [newAffinity, newAnnoyance, userId, annoyanceChanged]
   );
   return res.rows[0];
+}
+
+export async function markEnemy(userId: string, isEnemy: boolean): Promise<void> {
+  await pool.query(
+    `UPDATE user_relations SET enemy=$2, annoyance=CASE WHEN $2 THEN 100 ELSE annoyance END, affinity=CASE WHEN $2 THEN -100 ELSE affinity END WHERE user_id=$1`,
+    [userId, isEnemy]
+  );
+  if (isEnemy) {
+    await pool.query(
+      `UPDATE user_relations SET annoyance_locked=TRUE WHERE user_id=$1`,
+      [userId]
+    );
+  }
+}
+
+export async function getLilithMoodData(): Promise<{ avgAnnoyance: number; enemyCount: number; userCount: number }> {
+  const res = await pool.query(
+    `SELECT
+       COALESCE(AVG(annoyance), 0) as avg_annoyance,
+       COUNT(*) FILTER (WHERE enemy = TRUE) as enemy_count,
+       COUNT(*) as user_count
+     FROM user_relations WHERE blacklisted = FALSE`
+  );
+  return {
+    avgAnnoyance: Math.round(parseFloat(res.rows[0].avg_annoyance)),
+    enemyCount: parseInt(res.rows[0].enemy_count, 10),
+    userCount: parseInt(res.rows[0].user_count, 10),
+  };
+}
+
+export async function getEnemies(): Promise<{ user_id: string; username: string }[]> {
+  const res = await pool.query(
+    `SELECT user_id, username FROM user_relations WHERE enemy = TRUE ORDER BY username`
+  );
+  return res.rows;
 }
 
 export async function blacklistUser(userId: string) {

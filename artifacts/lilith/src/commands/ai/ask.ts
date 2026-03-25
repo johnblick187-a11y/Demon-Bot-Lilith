@@ -28,7 +28,8 @@ export async function execute(interaction: CommandInteraction) {
     annoyance: rel.annoyance,
     isOwner,
     mode: "chat",
-  });
+    enemy: (rel as any).enemy ?? false,
+  } as any);
 
   if (!isOwner) {
     await updateRelation(userId, { affinity: 1 });

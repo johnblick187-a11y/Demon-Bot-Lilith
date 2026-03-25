@@ -17,6 +17,7 @@ import * as annoyance from "./commands/core/annoyance.js";
 import * as affinity from "./commands/core/affinity.js";
 import * as prefix from "./commands/core/prefix.js";
 import * as createCommand from "./commands/core/createcommand.js";
+import * as enemy from "./commands/core/enemy.js";
 
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
@@ -105,8 +106,9 @@ const allCommandDefs: any[] = [
   mood.data,
   annoyance.data,
   affinity.data,
-  prefix.data, // exported as "editprefix"
+  prefix.data,
   createCommand.data,
+  enemy.data,
   ask.data,
   task.data,
   nsfwtoggle.data,
@@ -160,6 +162,7 @@ commandMap.set("annoyance", (i) => annoyance.execute(i));
 commandMap.set("affinity", (i) => affinity.execute(i));
 commandMap.set("changeprefix", (i) => prefix.execute(i));
 commandMap.set("create", (i) => createCommand.execute(i));
+commandMap.set("enemy", (i) => enemy.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));
@@ -205,7 +208,7 @@ commandMap.set("vcdeafen", (i) => executeVcdeafen(i));
 commandMap.set("vcundeafen", (i) => executeVcundeafen(i));
 
 for (const { data: actionData, action } of actionCommands) {
-  commandMap.set(actionData.name, (i) => executeAction(i, action));
+  commandMap.set(actionData.name, (i, c) => executeAction(i, action, c));
 }
 
 client.once("ready", () => handleReady(client));
