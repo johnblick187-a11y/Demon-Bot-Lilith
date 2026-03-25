@@ -27,12 +27,20 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub
       .setName("video")
-      .setDescription("Generate a short AI video from a text prompt")
+      .setDescription("Generate an AI video from a text prompt")
       .addStringOption((opt) =>
         opt
           .setName("prompt")
           .setDescription("Describe the video you want")
           .setRequired(true)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName("duration")
+          .setDescription("Length in seconds, up to 3:30 (210s) — default 6s")
+          .setRequired(false)
+          .setMinValue(1)
+          .setMaxValue(210)
       )
   )
   .addSubcommand((sub) =>
@@ -51,6 +59,14 @@ export const data = new SlashCommandBuilder()
           .setDescription("Include vocals? (default: no)")
           .setRequired(false)
       )
+      .addIntegerOption((opt) =>
+        opt
+          .setName("duration")
+          .setDescription("Length in seconds, up to 3:30 (210s) — default 30s")
+          .setRequired(false)
+          .setMinValue(1)
+          .setMaxValue(210)
+      )
   );
 
 export async function execute(interaction: CommandInteraction) {
@@ -59,8 +75,11 @@ export async function execute(interaction: CommandInteraction) {
 
   await interaction.deferReply();
 
+  const duration = (interaction.options as any).getInteger("duration") as number | null;
+
   if (sub === "video") {
-    await interaction.editReply(`🎬 Generating video for *"${prompt}"*… this takes ~30-60 seconds.`);
+    const videoDuration = duration ?? 6;
+    await interaction.editReply(`🎬 Generating ${videoDuration}s video for *"${prompt}"*… this takes ~30-90 seconds.`);
 
     try {
       const output = await replicate.run(
@@ -69,6 +88,7 @@ export async function execute(interaction: CommandInteraction) {
           input: {
             prompt,
             prompt_optimizer: true,
+            duration: videoDuration,
           },
         }
       );
@@ -99,9 +119,10 @@ export async function execute(interaction: CommandInteraction) {
     }
   } else if (sub === "music") {
     const vocals = (interaction.options as any).getBoolean("vocals") as boolean | null ?? false;
+    const musicDuration = duration ?? 30;
 
     await interaction.editReply(
-      `🎵 Generating ${vocals ? "song with vocals" : "instrumental"} for *"${prompt}"*… this takes ~30-60 seconds.`
+      `🎵 Generating ${musicDuration}s ${vocals ? "song with vocals" : "instrumental"} for *"${prompt}"*… this takes ~30-90 seconds.`
     );
 
     try {
@@ -113,7 +134,7 @@ export async function execute(interaction: CommandInteraction) {
             model_version: "stereo-large",
             output_format: "mp3",
             normalization_strategy: "peak",
-            duration: 30,
+            duration: musicDuration,
           },
         }
       );
