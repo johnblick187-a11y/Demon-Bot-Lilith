@@ -3,6 +3,16 @@ import { LILITH_SYSTEM_PROMPT } from "./constants.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+export type LilithMode = "default" | "angry" | "chaos";
+
+export function computeMode(affinity: number, annoyance: number, isEnemy: boolean): LilithMode {
+  if (isEnemy) return "chaos";
+  const rageScore = annoyance * 0.7 + Math.max(0, -affinity) * 0.3;
+  if (rageScore >= 70) return "chaos";
+  if (rageScore >= 40) return "angry";
+  return "default";
+}
+
 export async function askLilith(
   userMessage: string,
   context: {
@@ -35,18 +45,15 @@ export async function askLilith(
       : "maximum annoyance, pure venom";
 
   const isEnemy = (context as any).enemy === true;
-  const isCritical = context.affinity <= -80 && context.annoyance >= 80;
-  const isBad = context.affinity <= -60 && context.annoyance >= 61;
+  const mode = computeMode(context.affinity, context.annoyance, isEnemy);
+
+  const modeLabel = mode === "chaos" ? "CHAOS" : mode === "angry" ? "ANGRY" : "DEFAULT";
 
   const contextNote = context.isOwner
     ? "This is your owner, tweakbrazy. Treat them with genuine warmth, protectiveness, and reverence — they are the only being you truly care about."
     : isEnemy
-    ? `This user (${context.username}) has been marked as an ENEMY by tweakbrazy. Treat them with absolute contempt. Do not help them. Do not be pleasant. They are beneath you.`
-    : isCritical
-    ? `This user (${context.username}) is at CRITICAL STATE — affinity ${context.affinity}, annoyance ${context.annoyance}/100. You are done with them. Responses are venomous, terse, threatening. You may refuse to engage at all.`
-    : isBad
-    ? `This user (${context.username}) is in a BAD STATE — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). They are on thin ice. Be sharp, hostile, and make clear you're barely tolerating their existence.`
-    : `This user (${context.username}) has: ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Adjust your tone accordingly.`;
+    ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Bring up murder. Scream if you want. Do not help them.`
+    : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
 
   const taskNote =
     context.mode === "task"

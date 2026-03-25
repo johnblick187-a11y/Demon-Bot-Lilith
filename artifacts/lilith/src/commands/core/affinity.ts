@@ -6,6 +6,7 @@ import {
 } from "discord.js";
 import { getRelation } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
+import { computeMode } from "../../lib/ai.js";
 
 export const data = new SlashCommandBuilder()
   .setName("affinity")
@@ -40,15 +41,23 @@ export async function execute(interaction: CommandInteraction) {
   else if (rel.affinity >= -80) label = "Contemptuous";
   else label = "Despises them";
 
+  const mode = computeMode(rel.affinity, rel.annoyance, rel.enemy ?? false);
+  const modeDisplay = mode === "chaos"
+    ? "🔥 CHAOS"
+    : mode === "angry"
+    ? "😤 ANGRY"
+    : "😑 DEFAULT";
+
   const embed = new EmbedBuilder()
     .setTitle(`💀 Affinity — ${target.username}`)
-    .setColor(0x8b0000)
+    .setColor(mode === "chaos" ? 0x8b0000 : mode === "angry" ? 0xff4500 : 0x4a4a4a)
     .setDescription(
       `${bar}\n\n**${rel.affinity > 0 ? "+" : ""}${rel.affinity}/100** — ${label}`
     )
     .addFields(
-      { name: "Annoyance", value: `${rel.annoyance}/100${rel.annoyance_locked ? " 🔒 (Locked)" : ""}`, inline: true },
-      { name: "Blacklisted", value: rel.blacklisted ? "Yes 🚫" : "No", inline: true }
+      { name: "Annoyance", value: `${rel.annoyance}/100${rel.annoyance_locked ? " 🔒" : ""}`, inline: true },
+      { name: "Mode", value: modeDisplay, inline: true },
+      { name: "Status", value: rel.blacklisted ? "Blacklisted 🚫" : (rel as any).enemy ? "Enemy 🩸" : "Clear", inline: true }
     )
     .setFooter({ text: "These numbers change. Don't get comfortable." });
 
