@@ -8,8 +8,31 @@ const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const OR_MODEL = "nousresearch/hermes-3-llama-3.1-405b:free";
+const OR_MODELS = [
+  "meta-llama/llama-3.3-70b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-405b:free",
+  "qwen/qwen-2.5-72b-instruct:free",
+  "mistralai/mistral-7b-instruct:free",
+];
 const OR_NSFW_MODEL = "mancer/weaver";
+
+async function tryOpenRouter(messages: any[], max_tokens = 800, temperature = 0.9): Promise<string> {
+  for (const model of OR_MODELS) {
+    try {
+      const response = await openrouter.chat.completions.create({ model, messages, max_tokens, temperature });
+      const content = response.choices[0]?.message?.content;
+      if (content) return content;
+    } catch (err: any) {
+      const status = err?.status ?? err?.error?.code;
+      if (status === 429 || status === 402 || status === 503) {
+        console.warn(`[OpenRouter] ${model} failed (${status}), trying next...`);
+        continue;
+      }
+      throw err;
+    }
+  }
+  throw new Error("All OpenRouter models exhausted");
+}
 
 export type LilithMode = "default" | "angry" | "chaos";
 
@@ -143,19 +166,13 @@ export async function askLilith(
   const systemPrompt = ownerPrefix + LILITH_SYSTEM_PROMPT + (contextNote ? "\n\n" + contextNote : "") + taskNote + memoryNote;
 
   try {
-    const response = await openrouter.chat.completions.create({
-      model: OR_MODEL,
-      messages: [
-        { role: "system", content: systemPrompt },
-        ...historyMessages,
-        { role: "user", content: userMessage },
-      ],
-      max_tokens: 800,
-      temperature: 0.9,
-    });
-    return response.choices[0]?.message?.content ?? "...";
+    return await tryOpenRouter([
+      { role: "system", content: systemPrompt },
+      ...historyMessages,
+      { role: "user", content: userMessage },
+    ]);
   } catch (err) {
-    console.error("[askLilith] OpenRouter error:", err);
+    console.error("[askLilith] All models failed:", err);
     return "My mind is elsewhere. Try again.";
   }
 }
