@@ -156,3 +156,9 @@ id = "o6tXicJ-TNCIbOt6SIfrA"
 uri = "file://attached_assets/generated_images/lilith_no_funnel.png"
 type = "image"
 title = "Lilith — Funnel Removed"
+
+[[outputs]]
+id = "vMbb7jnfY3GGGASQjSDyW"
+uri = "file://attached_assets/generated_images/lilith_emoji_pipe.png"
+type = "image"
+title = "Lilith Smoking Emoji"
