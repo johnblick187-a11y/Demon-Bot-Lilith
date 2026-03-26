@@ -1,6 +1,6 @@
 import { Message, Client, EmbedBuilder, TextChannel, AttachmentBuilder, GuildMember } from "discord.js";
 import { joinVoiceChannel, VoiceConnectionStatus, entersState } from "@discordjs/voice";
-import { getMusicState, searchAndQueue, playNext, setMusicState, createMusicPlayer } from "../lib/music.js";
+import { getMusicState, searchAndQueue, queueDirectFile, playNext, setMusicState, createMusicPlayer } from "../lib/music.js";
 import {
   getAutoreacts,
   getAutoreplies,
@@ -437,7 +437,8 @@ export async function handleMessageCreate(message: Message, client: Client) {
     if (MUSIC_CMDS.includes(cmd)) {
       if (cmd === "play" || cmd === "p") {
         const query = args;
-        if (!query) { await message.reply("Give me something to play."); return; }
+        const attachment = message.attachments.first();
+        if (!query && !attachment) { await message.reply("Give me a song name or attach an audio file."); return; }
 
         const member = message.member as GuildMember;
         const vc = member?.voice?.channel;
@@ -460,6 +461,14 @@ export async function handleMessageCreate(message: Message, client: Client) {
           const player = createMusicPlayer(message.guild.id, connection);
           state = { player, queue: [], currentSong: null, connection };
           setMusicState(message.guild.id, state);
+        }
+
+        if (attachment) {
+          const title = attachment.name ?? "Uploaded file";
+          const result = queueDirectFile(message.guild.id, title, attachment.url, message.author.username);
+          if (!result) { await message.reply("Couldn't queue the file."); return; }
+          await message.reply(result.queued ? `🎵 Queued: **${title}**` : `🎵 Now playing: **${title}**`);
+          return;
         }
 
         await message.reply(`🔍 Searching for **${query}**…`);
