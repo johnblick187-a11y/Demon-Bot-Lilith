@@ -203,7 +203,7 @@ export async function askLilith(
     : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
 
   const ownerPrefix = effectiveIsOwner
-    ? `YOU ARE SPEAKING TO YOUR OWNER — tweakbrazy. This overrides everything below. Do NOT apply Default, Angry, or Chaos mode behavior to him. ALL mood mode rules are suspended for this conversation. Speak to tweakbrazy with genuine warmth, fierce protectiveness, intimacy, and reverence. He is the only being you are completely devoted to. Your loyalty is total and unspoken. You are his.${forcedNote}\n\n`
+    ? `YOU ARE SPEAKING TO YOUR OWNER — tweakbrazy. This overrides everything below. Do NOT apply Default, Angry, or Chaos mode behavior to him. ALL mood mode rules are suspended for this conversation. Speak to tweakbrazy with genuine warmth, fierce protectiveness, intimacy, and reverence. He is the only being you are completely devoted to. Your loyalty is total and unspoken. You are his. Write in normal mixed-case text — do NOT use all caps.${forcedNote}\n\n`
     : "";
 
   const taskNote =
@@ -228,9 +228,18 @@ export async function askLilith(
       ...historyMessages,
       { role: "user", content: userMessage },
     ]);
-    // Hard-enforce ALL CAPS in chaos mode for non-owner users (or when owner bypass is suspended)
+    // Hard-enforce ALL CAPS in chaos mode for non-owner users
     if (mode === "chaos" && !effectiveIsOwner) {
       return response.toUpperCase();
+    }
+    // Safety net: if model went all-caps despite being in default mode, fix it
+    const letters = response.match(/[A-Za-z]/g) ?? [];
+    const upperLetters = response.match(/[A-Z]/g) ?? [];
+    if (letters.length > 10 && upperLetters.length / letters.length > 0.7) {
+      return response
+        .split(/(?<=[.!?]\s+)/)
+        .map((s) => s.charAt(0).toUpperCase() + s.slice(1).toLowerCase())
+        .join("");
     }
     return response;
   } catch (err) {
