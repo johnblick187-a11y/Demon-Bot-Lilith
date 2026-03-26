@@ -133,6 +133,45 @@ export const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommand((sub) =>
+    sub
+      .setName("edit")
+      .setDescription("Edit an existing channel's settings")
+      .addChannelOption((opt) =>
+        opt.setName("channel").setDescription("Channel to edit (defaults to current)").setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt.setName("name").setDescription("New name").setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt.setName("topic").setDescription("New topic (use 'none' to clear)").setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName("slowmode")
+          .setDescription("Slowmode in seconds (0 to disable)")
+          .setMinValue(0)
+          .setMaxValue(21600)
+          .setRequired(false)
+      )
+      .addChannelOption((opt) =>
+        opt
+          .setName("category")
+          .setDescription("Move to this category (or out of one)")
+          .addChannelTypes(ChannelType.GuildCategory)
+          .setRequired(false)
+      )
+      .addBooleanOption((opt) =>
+        opt.setName("nsfw").setDescription("Set NSFW on or off").setRequired(false)
+      )
+      .addIntegerOption((opt) =>
+        opt
+          .setName("position")
+          .setDescription("Channel position in the list (0 = top)")
+          .setMinValue(0)
+          .setRequired(false)
+      )
+  )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
 
 export async function execute(interaction: CommandInteraction) {
@@ -225,5 +264,55 @@ export async function execute(interaction: CommandInteraction) {
     const current = target.nsfw;
     await target.setNSFW(!current);
     await interaction.reply(`✅ <#${target.id}> NSFW is now **${!current ? "ON" : "OFF"}**.`);
+  }
+
+  else if (sub === "edit") {
+    const target   = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as any;
+    if (!target) return interaction.reply({ content: "No channel found.", flags: 64 });
+
+    const newName     = (interaction.options as any).getString("name") as string | null;
+    const newTopic    = (interaction.options as any).getString("topic") as string | null;
+    const newSlowmode = (interaction.options as any).getInteger("slowmode") as number | null;
+    const newCategory = (interaction.options as any).getChannel("category") as CategoryChannel | null;
+    const newNsfw     = (interaction.options as any).getBoolean("nsfw") as boolean | null;
+    const newPosition = (interaction.options as any).getInteger("position") as number | null;
+
+    const changes: string[] = [];
+
+    try {
+      if (newName !== null) {
+        await target.setName(newName);
+        changes.push(`**Name** → \`${newName}\``);
+      }
+      if (newTopic !== null && "setTopic" in target) {
+        const topic = newTopic.toLowerCase() === "none" ? null : newTopic;
+        await (target as TextChannel).setTopic(topic);
+        changes.push(topic ? `**Topic** → *${topic}*` : "**Topic** cleared");
+      }
+      if (newSlowmode !== null && "setRateLimitPerUser" in target) {
+        await (target as TextChannel).setRateLimitPerUser(newSlowmode);
+        changes.push(newSlowmode === 0 ? "**Slowmode** disabled" : `**Slowmode** → ${newSlowmode}s`);
+      }
+      if (newCategory !== null) {
+        await target.setParent(newCategory.id, { lockPermissions: false });
+        changes.push(`**Category** → ${newCategory.name}`);
+      }
+      if (newNsfw !== null && "setNSFW" in target) {
+        await (target as TextChannel).setNSFW(newNsfw);
+        changes.push(`**NSFW** → ${newNsfw ? "ON" : "OFF"}`);
+      }
+      if (newPosition !== null) {
+        await target.setPosition(newPosition);
+        changes.push(`**Position** → ${newPosition}`);
+      }
+
+      if (changes.length === 0) {
+        return interaction.reply({ content: "You didn't provide anything to change.", flags: 64 });
+      }
+
+      await interaction.reply(`✅ <#${target.id}> updated:\n${changes.join("\n")}`);
+    } catch (err) {
+      await interaction.reply({ content: `❌ Failed to edit channel: ${(err as any)?.message ?? "unknown error"}`, flags: 64 });
+    }
   }
 }
