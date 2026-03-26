@@ -1,0 +1,32 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "0Br8kUrxnQmu88Gsdb-1p"
+uri = "file://artifacts/lilith/src/assets/emojis/lilith_smug.png"
+type = "image"
+title = "lilith_smug"
+
+[[outputs]]
+id = "LRAHhQB9-ERSdHs8F_0ad"
+uri = "file://artifacts/lilith/src/assets/emojis/lilith_rage.png"
+type = "image"
+title = "lilith_rage"
+
+[[outputs]]
+id = "6gNWmnyF9ZArL_0UtFAf6"
+uri = "file://artifacts/lilith/src/assets/emojis/lilith_blush.png"
+type = "image"
+title = "lilith_blush"
+
+[[outputs]]
+id = "UuFi7fgs3ulAnenwraiIS"
+uri = "file://artifacts/lilith/src/assets/emojis/lilith_evil.png"
+type = "image"
+title = "lilith_evil"
+
+[[outputs]]
+id = "DZ95_3RcUqwM0K1mmFftU"
+uri = "file://artifacts/lilith/src/assets/emojis/lilith_sleepy.png"
+type = "image"
+title = "lilith_sleepy"
