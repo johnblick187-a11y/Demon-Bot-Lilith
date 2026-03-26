@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
   );
 
 const COMMAND_LIST = `
-**⚙️ Core:** /status /help /mood /annoyance /affinity
+**⚙️ Core:** /status /diagnostics /help /mood /annoyance /affinity
 
 **🧠 AI:** /ask /task /tldr /nsfwtoggle /google
 
