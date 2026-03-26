@@ -1,4 +1,6 @@
-import { Message, Client, EmbedBuilder, TextChannel, AttachmentBuilder } from "discord.js";
+import { Message, Client, EmbedBuilder, TextChannel, AttachmentBuilder, GuildMember } from "discord.js";
+import { joinVoiceChannel, VoiceConnectionStatus, entersState } from "@discordjs/voice";
+import { getMusicState, searchAndQueue, playNext, setMusicState, createMusicPlayer } from "../lib/music.js";
 import {
   getAutoreacts,
   getAutoreplies,
@@ -400,6 +402,104 @@ export async function handleMessageCreate(message: Message, client: Client) {
       await updateRelation(userId, { affinity: AFFINITY_TABLE.mention });
     }
     return;
+  }
+
+  // ── Built-in prefix music commands ──────────────────────────────────────────
+  if (effectivePrefix && content.startsWith(effectivePrefix)) {
+    const withoutPfx = content.slice(effectivePrefix.length).trim();
+    const parts = withoutPfx.split(/\s+/);
+    const cmd = parts[0]?.toLowerCase();
+    const args = parts.slice(1).join(" ").trim();
+
+    const MUSIC_CMDS = ["play", "p", "skip", "s", "stop", "pause", "resume", "r", "queue", "q"];
+    if (MUSIC_CMDS.includes(cmd)) {
+      if (cmd === "play" || cmd === "p") {
+        const query = args;
+        if (!query) { await message.reply("Give me something to play."); return; }
+
+        const member = message.member as GuildMember;
+        const vc = member?.voice?.channel;
+        if (!vc) { await message.reply("Get in a voice channel first."); return; }
+
+        let state = getMusicState(message.guild.id);
+        if (!state) {
+          const connection = joinVoiceChannel({
+            channelId: vc.id,
+            guildId: vc.guild.id,
+            adapterCreator: vc.guild.voiceAdapterCreator,
+          });
+          try {
+            await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
+          } catch {
+            connection.destroy();
+            await message.reply("Couldn't connect to voice.");
+            return;
+          }
+          const player = createMusicPlayer(message.guild.id, connection);
+          state = { player, queue: [], currentSong: null, connection };
+          setMusicState(message.guild.id, state);
+        }
+
+        await message.reply(`🔍 Searching for **${query}**…`);
+        const result = await searchAndQueue(message.guild.id, query, message.author.username);
+        if (!result) { await message.reply("Couldn't find that. Try a different search."); return; }
+        await message.reply(result.queued ? `🎵 Queued: **${result.title}**` : `🎵 Now playing: **${result.title}**`);
+        return;
+      }
+
+      if (cmd === "skip" || cmd === "s") {
+        const state = getMusicState(message.guild.id);
+        if (!state) { await message.reply("Nothing is playing."); return; }
+        const hasNext = await playNext(message.guild.id);
+        await message.reply(hasNext ? "⏭️ Skipped." : "⏭️ Skipped. Queue is empty.");
+        return;
+      }
+
+      if (cmd === "stop") {
+        const state = getMusicState(message.guild.id);
+        if (!state) { await message.reply("Nothing playing."); return; }
+        state.queue.length = 0;
+        state.player.stop();
+        state.currentSong = null;
+        await message.reply("⏹️ Stopped. Queue cleared.");
+        return;
+      }
+
+      if (cmd === "pause") {
+        const state = getMusicState(message.guild.id);
+        if (!state) { await message.reply("Nothing is playing."); return; }
+        state.player.pause();
+        await message.reply("⏸️ Paused.");
+        return;
+      }
+
+      if (cmd === "resume" || cmd === "r") {
+        const state = getMusicState(message.guild.id);
+        if (!state) { await message.reply("Nothing to resume."); return; }
+        state.player.unpause();
+        await message.reply("▶️ Resumed.");
+        return;
+      }
+
+      if (cmd === "queue" || cmd === "q") {
+        const state = getMusicState(message.guild.id);
+        if (!state || (!state.currentSong && state.queue.length === 0)) {
+          await message.reply("Queue is empty.");
+          return;
+        }
+        const embed = new EmbedBuilder()
+          .setTitle("🎵 Music Queue")
+          .setColor(0x8b0000)
+          .setDescription([
+            state.currentSong ? `**Now Playing:** ${state.currentSong.title}` : "Nothing playing.",
+            state.queue.length > 0
+              ? "\n**Up Next:**\n" + state.queue.slice(0, 10).map((s, i) => `${i + 1}. ${s.title}`).join("\n")
+              : "\nQueue is empty after this.",
+          ].join("\n"));
+        await message.reply({ embeds: [embed] });
+        return;
+      }
+    }
   }
 
   for (const cmd of allCommands) {
