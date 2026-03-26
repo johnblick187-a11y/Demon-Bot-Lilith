@@ -272,7 +272,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
   // Always react to owner messages
   if (userId === OWNER_ID) {
-    const ownerReacts = ["🖤", "🔥", "😈", "💜", "👁️"];
+    const ownerReacts = ["😈", "🩸", "🖤", "👁️", "🔱", "⛧", "💀", "🕷️", "🌑", "🦇"];
     const pick = ownerReacts[Math.floor(Math.random() * ownerReacts.length)];
     try { await message.react(pick); } catch {}
   }
