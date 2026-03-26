@@ -27,7 +27,7 @@ import {
   getLilithMoodData,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";
-import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS, setOwnerBypassSuspended, getOwnerBypassSuspended, assessMentalStateDelta } from "../lib/ai.js";
+import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS, setOwnerBypassSuspended, getOwnerBypassSuspended, assessMentalStateDelta, getForcedPersonality } from "../lib/ai.js";
 import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
@@ -115,16 +115,16 @@ export async function handleMessageCreate(message: Message, client: Client) {
         }
       }
 
-      // +mood
+      // +mood — server mood index
       if (cmd === "mood") {
         const MOODS = [
-          { min: 0,  max: 15,  mood: "Murderous",             emoji: "🩸", color: 0x8b0000 },
-          { min: 16, max: 30,  mood: "Seething",               emoji: "🔥", color: 0xff0000 },
-          { min: 31, max: 45,  mood: "Irritated",              emoji: "😤", color: 0xff4500 },
-          { min: 46, max: 60,  mood: "Indifferent",            emoji: "😑", color: 0x4a4a4a },
-          { min: 61, max: 75,  mood: "Amused",                 emoji: "😏", color: 0x9932cc },
-          { min: 76, max: 90,  mood: "Dangerously Good",       emoji: "😈", color: 0x6a0dad },
-          { min: 91, max: 100, mood: "Suspiciously Pleasant",  emoji: "🖤", color: 0x2a0050 },
+          { min: 0,  max: 15,  mood: "Murderous",            emoji: "🩸", color: 0x8b0000 },
+          { min: 16, max: 30,  mood: "Seething",              emoji: "🔥", color: 0xff0000 },
+          { min: 31, max: 45,  mood: "Irritated",             emoji: "😤", color: 0xff4500 },
+          { min: 46, max: 60,  mood: "Indifferent",           emoji: "😑", color: 0x4a4a4a },
+          { min: 61, max: 75,  mood: "Amused",                emoji: "😏", color: 0x9932cc },
+          { min: 76, max: 90,  mood: "Dangerously Good",      emoji: "😈", color: 0x6a0dad },
+          { min: 91, max: 100, mood: "Suspiciously Pleasant", emoji: "🖤", color: 0x2a0050 },
         ];
         const { avgAnnoyance, enemyCount, userCount } = await getLilithMoodData();
         const hour = new Date().getHours();
@@ -144,16 +144,25 @@ export async function handleMessageCreate(message: Message, client: Client) {
         return void message.reply({ embeds: [embed] });
       }
 
-      // +affinity
-      if (cmd === "affinity") {
-        const rel = await getRelation(OWNER_ID, message.author.username);
-        return void message.reply(`Your affinity with me: **${rel.affinity}/100**.`);
-      }
-
-      // +annoyance
-      if (cmd === "annoyance") {
-        const rel = await getRelation(OWNER_ID, message.author.username);
-        return void message.reply(`Your annoyance level: **${rel.annoyance}/100**.`);
+      // +mode — current temperament mode
+      if (cmd === "mode") {
+        const forced = getForcedPersonality();
+        const bypassSuspended = getOwnerBypassSuspended();
+        const forcedDisplay = forced === "chaos"
+          ? "🔥 **CHAOS** — Forced globally"
+          : "✅ Natural — driven by affinity/annoyance";
+        const testDisplay = bypassSuspended
+          ? "🔴 ON — owner bypass suspended"
+          : "🟢 OFF — owner bypass active";
+        const embed = new EmbedBuilder()
+          .setTitle("🧠 Lilith — Current Mode")
+          .setColor(forced === "chaos" ? 0x8b0000 : 0x6a0dad)
+          .addFields(
+            { name: "Global Override", value: forcedDisplay, inline: false },
+            { name: "Test Mode", value: testDisplay, inline: false }
+          )
+          .setFooter({ text: "Natural mode = rage 69+ triggers chaos per user" });
+        return void message.reply({ embeds: [embed] });
       }
 
       // drug commands
@@ -174,11 +183,11 @@ export async function handleMessageCreate(message: Message, client: Client) {
       if (cmd === "help") {
         return void message.reply(
           "**DM commands (+ prefix)**\n" +
+          "`+mood` — current server mood index\n" +
+          "`+mode` — current temperament mode + test mode status\n" +
+          "`+testmode on/off` — suspend owner bypass (she treats you like a regular user)\n" +
           "`+dmmode on/off/status` — toggle NSFW DM mode\n" +
           "`+tts <text>` — hear my voice\n" +
-          "`+mood` — my current mood\n" +
-          "`+affinity` — your affinity with me\n" +
-          "`+annoyance` — your annoyance level\n" +
           "`+clear` — wipe conversation memory\n" +
           "`+hitsmeth` `+hitsweed` `+chugsdrink` `+popspill` — you know what these do\n\n" +
           "Anything else you send me — I'll respond."

@@ -21,9 +21,6 @@ import * as diagnostics from "./commands/core/diagnostics.js";
 import * as unblacklist from "./commands/core/unblacklist.js";
 import * as override from "./commands/core/override.js";
 import * as help from "./commands/core/help.js";
-import * as mood from "./commands/core/mood.js";
-import * as annoyance from "./commands/core/annoyance.js";
-import * as affinity from "./commands/core/affinity.js";
 import * as prefix from "./commands/core/prefix.js";
 import * as createCommand from "./commands/core/createcommand.js";
 import * as enemy from "./commands/core/enemy.js";
@@ -31,10 +28,8 @@ import * as memory from "./commands/core/memory.js";
 import * as dmmode from "./commands/core/dmmode.js";
 import * as temperament from "./commands/core/temperament.js";
 import { loadForcedPersonalityFromDb } from "./lib/ai.js";
-import * as mentalstate from "./commands/core/mentalstate.js";
 import * as setannoyance from "./commands/core/setannoyance.js";
 import * as setaffinity from "./commands/core/setaffinity.js";
-import * as modeCmd from "./commands/core/mode.js";
 
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
@@ -151,19 +146,14 @@ const allCommandDefs: any[] = [
   unblacklist.data,
   override.data,
   help.data,
-  mood.data,
-  annoyance.data,
-  affinity.data,
   prefix.data,
   createCommand.data,
   enemy.data,
   memory.data,
   dmmode.data,
   temperament.data,
-  mentalstate.data,
   setannoyance.data,
   setaffinity.data,
-  modeCmd.data,
   ask.data,
   task.data,
   nsfwtoggle.data,
@@ -236,19 +226,14 @@ commandMap.set("diagnostics", (i, c) => diagnostics.execute(i, c));
 commandMap.set("unblacklist", (i) => unblacklist.execute(i));
 commandMap.set("override", (i) => override.execute(i));
 commandMap.set("help", (i) => help.execute(i));
-commandMap.set("mood", (i) => mood.execute(i));
-commandMap.set("annoyance", (i) => annoyance.execute(i));
-commandMap.set("affinity", (i) => affinity.execute(i));
 commandMap.set("changeprefix", (i) => prefix.execute(i));
 commandMap.set("create", (i) => createCommand.execute(i));
 commandMap.set("enemy", (i) => enemy.execute(i));
 commandMap.set("memory", (i) => memory.execute(i));
 commandMap.set("dmmode", (i) => dmmode.execute(i));
 commandMap.set("temperament", (i) => temperament.execute(i));
-commandMap.set("mentalstate", (i) => mentalstate.execute(i));
 commandMap.set("setannoyance", (i) => setannoyance.execute(i));
 commandMap.set("setaffinity", (i) => setaffinity.execute(i));
-commandMap.set("mode", (i) => modeCmd.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));
