@@ -65,6 +65,7 @@ import * as userreact from "./commands/moderation/userreact.js";
 import * as userreply from "./commands/moderation/userreply.js";
 import * as stealemoji from "./commands/moderation/stealemoji.js";
 import * as stealsticker from "./commands/moderation/stealsticker.js";
+import * as stealsound from "./commands/moderation/stealsound.js";
 
 import {
   hitsmethData, executeHitsmeth,
@@ -155,6 +156,7 @@ const allCommandDefs: any[] = [
   userreply.data,
   stealemoji.data,
   stealsticker.data,
+  stealsound.data,
   hitsmethData,
   hitsweedData,
   chugsdrinkData,
@@ -219,6 +221,7 @@ commandMap.set("userreact", (i) => userreact.execute(i));
 commandMap.set("userreply", (i) => userreply.execute(i));
 commandMap.set("stealemoji", (i) => stealemoji.execute(i));
 commandMap.set("stealsticker", (i) => stealsticker.execute(i));
+commandMap.set("stealsound", (i) => stealsound.execute(i));
 commandMap.set("hitsmeth", (i) => executeHitsmeth(i));
 commandMap.set("hitsweed", (i) => executeHitsweed(i));
 commandMap.set("chugsdrink", (i) => executeChugsdrink(i));
