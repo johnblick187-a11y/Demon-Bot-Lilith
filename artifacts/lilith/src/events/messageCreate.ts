@@ -1,4 +1,4 @@
-import { Message, Client } from "discord.js";
+import { Message, Client, EmbedBuilder } from "discord.js";
 import {
   getAutoreacts,
   getAutoreplies,
@@ -113,7 +113,8 @@ export async function handleMessageCreate(message: Message, client: Client) {
     if (!content.startsWith(triggerPrefix)) continue;
 
     const withoutPrefix = content.slice(triggerPrefix.length).trim();
-    const commandName = withoutPrefix.split(/\s+/)[0]?.toLowerCase();
+    const parts = withoutPrefix.split(/\s+/);
+    const commandName = parts[0]?.toLowerCase();
     if (commandName !== cmd.command_name) continue;
 
     if (cmd.daily_limit) {
@@ -127,7 +128,37 @@ export async function handleMessageCreate(message: Message, client: Client) {
       await recordCustomCommandUsage(message.guild.id, userId, cmd.command_name);
     }
 
-    await message.reply(cmd.effect);
+    // Resolve {user} placeholder — first @mention in the message, else author
+    const mentionMatch = message.content.match(/<@!?(\d+)>/);
+    const mentionedUser = mentionMatch
+      ? (await message.guild!.members.fetch(mentionMatch[1]).catch(() => null))
+      : null;
+    const userStr = mentionedUser
+      ? `<@${mentionedUser.id}>`
+      : `**${message.author.displayName ?? message.author.username}**`;
+
+    const resolvedContent = (cmd.effect ?? "").replace(/\{user\}/gi, userStr);
+    const effectType = cmd.effect_type ?? "text";
+
+    if (effectType === "action") {
+      await message.channel.send(`*${resolvedContent}*`);
+      return;
+    }
+
+    if (effectType === "embed") {
+      const embed = new EmbedBuilder().setDescription(resolvedContent).setColor(
+        cmd.embed_color ? (parseInt(cmd.embed_color) as any) : 0x8b0000
+      );
+      if (cmd.embed_title) embed.setTitle(cmd.embed_title);
+      if (cmd.image_url) embed.setImage(cmd.image_url);
+      await message.channel.send({ embeds: [embed] });
+      return;
+    }
+
+    // text (default)
+    const payload: any = { content: resolvedContent };
+    if (cmd.image_url) payload.files = [cmd.image_url];
+    await message.reply(payload);
     return;
   }
 

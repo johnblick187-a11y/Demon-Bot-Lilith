@@ -105,6 +105,10 @@ export async function initDb() {
   await pool.query(`
     ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS locked_prefix TEXT DEFAULT NULL;
     ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS daily_limit BOOLEAN NOT NULL DEFAULT FALSE;
+    ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS effect_type TEXT NOT NULL DEFAULT 'text';
+    ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS embed_title TEXT DEFAULT NULL;
+    ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS embed_color TEXT DEFAULT NULL;
+    ALTER TABLE custom_commands ADD COLUMN IF NOT EXISTS image_url TEXT DEFAULT NULL;
     ALTER TABLE custom_command_usage ADD COLUMN IF NOT EXISTS month_key TEXT;
     ALTER TABLE custom_command_usage ADD COLUMN IF NOT EXISTS use_count INTEGER NOT NULL DEFAULT 1;
     UPDATE custom_command_usage SET month_key = TO_CHAR(used_date, 'YYYY-MM') WHERE month_key IS NULL;
@@ -446,25 +450,44 @@ export async function addCustomCommand(guildId: string, name: string, effect: st
   );
 }
 
+export interface CustomCommandConfig {
+  effect_type: "text" | "embed" | "action";
+  embed_title?: string | null;
+  embed_color?: string | null;
+  image_url?: string | null;
+}
+
 export async function addLockedCustomCommand(
   guildId: string,
   name: string,
   effect: string,
-  lockedPrefix: string
+  lockedPrefix: string,
+  config: CustomCommandConfig = { effect_type: "text" }
 ): Promise<void> {
   await pool.query(
-    `INSERT INTO custom_commands (guild_id, command_name, effect, locked_prefix, daily_limit)
-     VALUES ($1, $2, $3, $4, FALSE)
-     ON CONFLICT (guild_id, command_name) DO UPDATE SET effect=$3, locked_prefix=$4, daily_limit=FALSE`,
-    [guildId, name.toLowerCase(), effect, lockedPrefix]
+    `INSERT INTO custom_commands (guild_id, command_name, effect, locked_prefix, daily_limit, effect_type, embed_title, embed_color, image_url)
+     VALUES ($1, $2, $3, $4, FALSE, $5, $6, $7, $8)
+     ON CONFLICT (guild_id, command_name) DO UPDATE
+       SET effect=$3, locked_prefix=$4, daily_limit=FALSE,
+           effect_type=$5, embed_title=$6, embed_color=$7, image_url=$8`,
+    [guildId, name.toLowerCase(), effect, lockedPrefix,
+     config.effect_type, config.embed_title ?? null, config.embed_color ?? null, config.image_url ?? null]
   );
 }
 
-export async function getCustomCommands(
-  guildId: string
-): Promise<{ command_name: string; effect: string; locked_prefix: string | null; daily_limit: boolean }[]> {
+export async function getCustomCommands(guildId: string): Promise<{
+  command_name: string;
+  effect: string;
+  locked_prefix: string | null;
+  daily_limit: boolean;
+  effect_type: string;
+  embed_title: string | null;
+  embed_color: string | null;
+  image_url: string | null;
+}[]> {
   const res = await pool.query(
-    `SELECT command_name, effect, locked_prefix, daily_limit FROM custom_commands WHERE guild_id=$1`,
+    `SELECT command_name, effect, locked_prefix, daily_limit, effect_type, embed_title, embed_color, image_url
+     FROM custom_commands WHERE guild_id=$1`,
     [guildId]
   );
   return res.rows;
