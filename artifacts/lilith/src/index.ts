@@ -310,6 +310,19 @@ for (const { data: actionData, action } of actionCommands) {
 
 client.on("error", (err) => console.error("Discord client error:", err));
 
+// Cleanly disconnect from Discord on shutdown so no zombie instances linger
+process.on("SIGTERM", () => {
+  console.log("[Lilith] SIGTERM received — destroying client.");
+  client.destroy();
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  console.log("[Lilith] SIGINT received — destroying client.");
+  client.destroy();
+  process.exit(0);
+});
+
 process.on("uncaughtException", (err: any) => {
   if (err?.code === 10062) return;
   console.error("Uncaught exception:", err);

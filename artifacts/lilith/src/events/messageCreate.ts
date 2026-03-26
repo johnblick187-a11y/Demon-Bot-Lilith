@@ -20,6 +20,7 @@ import {
   getMessagesToSummarize,
   saveConversationSummary,
   deleteMessagesByIds,
+  clearConversationHistory,
   addXp,
   setLevelInDb,
   getLevelChannel,
@@ -134,6 +135,12 @@ export async function handleMessageCreate(message: Message, client: Client) {
         return void message.channel.send(line.replace(/\{user\}/gi, `**${message.author.displayName ?? message.author.username}**`));
       }
 
+      // +clear — flush poisoned conversation history
+      if (cmd === "clear") {
+        await clearConversationHistory("GLOBAL", OWNER_ID);
+        return void message.reply("Memory wiped. Fresh start.");
+      }
+
       // +help
       if (cmd === "help") {
         return void message.reply(
@@ -143,6 +150,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
           "`+mood` — my current mood\n" +
           "`+affinity` — your affinity with me\n" +
           "`+annoyance` — your annoyance level\n" +
+          "`+clear` — wipe conversation memory\n" +
           "`+hitsmeth` `+hitsweed` `+chugsdrink` `+popspill` — you know what these do\n\n" +
           "Anything else you send me — I'll respond."
         );
@@ -176,7 +184,11 @@ export async function handleMessageCreate(message: Message, client: Client) {
       // Strip leading/trailing whitespace and ensure Discord won't choke on it
       const response = rawResponse.trim() || "...";
       await message.reply(response.slice(0, 1999));
-      await saveConversationTurn("GLOBAL", OWNER_ID, raw, response);
+      // Only save real responses — never save error fallbacks to history
+      const ERROR_FALLBACKS = ["My mind is elsewhere. Try again.", "..."];
+      if (!ERROR_FALLBACKS.includes(response)) {
+        await saveConversationTurn("GLOBAL", OWNER_ID, raw, response);
+      }
 
       (async () => {
         try {
