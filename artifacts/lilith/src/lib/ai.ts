@@ -9,6 +9,7 @@ const openrouter = new OpenAI({
 });
 
 const OR_MODELS = [
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
   "nousresearch/hermes-3-llama-3.1-70b",
   "meta-llama/llama-3.3-70b-instruct",
   "nousresearch/hermes-3-llama-3.1-405b:free",
