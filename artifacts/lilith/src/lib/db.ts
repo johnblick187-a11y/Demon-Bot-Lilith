@@ -430,8 +430,8 @@ export async function addLockedCustomCommand(
 ): Promise<void> {
   await pool.query(
     `INSERT INTO custom_commands (guild_id, command_name, effect, locked_prefix, daily_limit)
-     VALUES ($1, $2, $3, $4, TRUE)
-     ON CONFLICT (guild_id, command_name) DO UPDATE SET effect=$3, locked_prefix=$4, daily_limit=TRUE`,
+     VALUES ($1, $2, $3, $4, FALSE)
+     ON CONFLICT (guild_id, command_name) DO UPDATE SET effect=$3, locked_prefix=$4, daily_limit=FALSE`,
     [guildId, name.toLowerCase(), effect, lockedPrefix]
   );
 }

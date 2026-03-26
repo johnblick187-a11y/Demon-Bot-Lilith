@@ -23,7 +23,7 @@ export const data = new SlashCommandBuilder()
     sub
       .setName("custom-command")
       .setDescription(
-        "Create a custom command with a locked prefix and twice-per-month usage limit per user"
+        "Create a custom command with a locked prefix"
       )
       .addStringOption((opt) =>
         opt
@@ -86,8 +86,7 @@ export async function execute(interaction: CommandInteraction) {
     await interaction.reply(
       `✅ Custom command \`${currentPrefix}${cleanName}\` created.\n` +
       `**Effect:** ${effect}\n\n` +
-      `**Prefix locked to:** \`${currentPrefix}\` *(changing the server prefix won't affect this command)*\n` +
-      `**Daily limit:** Each user can trigger this command once per day.\n\n` +
+      `**Prefix locked to:** \`${currentPrefix}\` *(changing the server prefix won't affect this command)*\n\n` +
       `Type \`${currentPrefix}${cleanName}\` in any channel to use it.`
     );
   }
