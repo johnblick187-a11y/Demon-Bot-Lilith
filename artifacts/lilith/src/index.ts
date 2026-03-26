@@ -337,6 +337,31 @@ client.on("channelDelete", (channel) => handleChannelDelete(channel as any));
 client.on("guildBanAdd", (ban) => handleGuildBanAdd(ban));
 client.on("roleDelete", (role) => handleRoleDelete(role));
 
+// Commands that make sense in DMs — registered globally so they appear in the DM command picker
+const dmCommandDefs = [
+  dmmode.data,
+  override.data,
+  memory.data,
+  help.data,
+  status.data,
+  mood.data,
+  affinity.data,
+  annoyance.data,
+  ask.data,
+  task.data,
+  tldr.data,
+  ship.data,
+  smashData,
+  blowData,
+  tts.data,
+  generate.data,
+  hitsmethData,
+  hitsweedData,
+  chugsdrinkData,
+  popspillData,
+  ...actionCommands.map((c) => c.data),
+];
+
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN!);
   const appId = (await client.application?.fetch())?.id;
@@ -358,12 +383,14 @@ async function registerCommands() {
     }
   }
 
-  // Clear global commands so they don't duplicate guild commands in the picker
+  // Register DM-appropriate commands globally so they show in the DM command picker
+  // Guild commands take priority in servers so there is no duplication in server pickers
   try {
-    await rest.put(Routes.applicationCommands(appId), { body: [] });
-    console.log("Global commands cleared.");
+    const dmBody = dmCommandDefs.map((c) => c.toJSON());
+    await rest.put(Routes.applicationCommands(appId), { body: dmBody });
+    console.log(`Registered ${dmCommandDefs.length} commands globally for DMs.`);
   } catch (err) {
-    console.error("Failed to clear global commands:", err);
+    console.error("Failed to register global DM commands:", err);
   }
 }
 
