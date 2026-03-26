@@ -184,7 +184,7 @@ export async function askLilith(
       : "maximum annoyance, pure venom";
 
   const isEnemy = context.enemy === true;
-  const effectiveIsOwner = context.isOwner && !_ownerBypassSuspended && _forcedPersonality === null;
+  const effectiveIsOwner = context.isOwner && !_ownerBypassSuspended && _forcedPersonality !== "chaos";
   const mode = computeMode(context.affinity, context.annoyance, isEnemy);
   const modeLabel = mode === "chaos" ? "CHAOS" : "DEFAULT";
   const forced = getForcedPersonality();
@@ -196,8 +196,8 @@ export async function askLilith(
 
   const contextNote = effectiveIsOwner
     ? ""
-    : forced !== null
-    ? `GLOBAL MODE FORCED: ${modeLabel}. Affinity/annoyance stats are SUSPENDED — do not factor them in. This applies to ${context.username} without exception.`
+    : forced === "chaos"
+    ? `GLOBAL MODE FORCED: CHAOS. Affinity/annoyance stats are SUSPENDED — do not factor them in. This applies to ${context.username} without exception.`
     : isEnemy
     ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Do not help them.`
     : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
