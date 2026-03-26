@@ -5,7 +5,7 @@ export const data = new SlashCommandBuilder()
   .setDescription("Rename a user's server nickname")
   .addUserOption((opt) => opt.setName("user").setDescription("User to rename").setRequired(true))
   .addStringOption((opt) => opt.setName("name").setDescription("New nickname").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageNicknames);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

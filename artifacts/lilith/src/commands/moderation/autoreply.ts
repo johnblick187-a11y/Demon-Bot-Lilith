@@ -17,7 +17,7 @@ export const data = new SlashCommandBuilder()
       .setDescription("Remove an auto-reply trigger")
       .addStringOption((opt) => opt.setName("trigger").setDescription("Trigger to remove").setRequired(true))
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) return;

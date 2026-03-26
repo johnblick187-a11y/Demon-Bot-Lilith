@@ -6,7 +6,7 @@ export const data = new SlashCommandBuilder()
   .setDescription("Warn a user")
   .addUserOption((opt) => opt.setName("user").setDescription("User to warn").setRequired(true))
   .addStringOption((opt) => opt.setName("reason").setDescription("Reason").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);

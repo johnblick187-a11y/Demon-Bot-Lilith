@@ -8,7 +8,7 @@ export const data = new SlashCommandBuilder()
     opt.setName("duration").setDescription("Duration in minutes").setRequired(true).setMinValue(1).setMaxValue(40320)
   )
   .addStringOption((opt) => opt.setName("reason").setDescription("Reason").setRequired(false))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ModerateMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);

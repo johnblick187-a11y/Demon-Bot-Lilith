@@ -36,7 +36,7 @@ export const data = new SlashCommandBuilder()
       .setDescription("List all reaction roles in this server")
   )
 
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

@@ -76,7 +76,7 @@ export const data = new SlashCommandBuilder()
       .addIntegerOption((o) => o.setName("id").setDescription("Rule ID (from /automod list)").setRequired(true))
   )
 
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) return;

@@ -50,7 +50,7 @@ export const data = new SlashCommandBuilder()
         opt.setName("image").setDescription("Image URL to attach (any type)").setRequired(false)
       )
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   const sub = (interaction.options as any).getSubcommand() as string;

@@ -10,7 +10,7 @@ export const makeroleData = new SlashCommandBuilder()
   .setDescription("Create a new role")
   .addStringOption((opt) => opt.setName("name").setDescription("Role name").setRequired(true))
   .addStringOption((opt) => opt.setName("color").setDescription("Hex color e.g. #ff0000").setRequired(false))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeMakerole(interaction: CommandInteraction) {
   const name = (interaction.options as any).getString("name", true);
@@ -30,7 +30,7 @@ export const editroleData = new SlashCommandBuilder()
   .addRoleOption((opt) => opt.setName("role").setDescription("Role to edit").setRequired(true))
   .addStringOption((opt) => opt.setName("name").setDescription("New name").setRequired(false))
   .addStringOption((opt) => opt.setName("color").setDescription("New hex color").setRequired(false))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeEditrole(interaction: CommandInteraction) {
   const role = (interaction.options as any).getRole("role", true) as Role;
@@ -52,7 +52,7 @@ export const deleteroleData = new SlashCommandBuilder()
   .setName("deleterole")
   .setDescription("Delete a role")
   .addRoleOption((opt) => opt.setName("role").setDescription("Role to delete").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageRoles);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeDeleterole(interaction: CommandInteraction) {
   const role = (interaction.options as any).getRole("role", true) as Role;

@@ -19,7 +19,7 @@ export const data = new SlashCommandBuilder()
   .addSubcommand((sub) =>
     sub.setName("remove").setDescription("Disable server logging")
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) return;

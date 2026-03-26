@@ -46,7 +46,7 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) => o.setName("id").setDescription("Webhook ID").setRequired(true))
   )
 
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageWebhooks);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

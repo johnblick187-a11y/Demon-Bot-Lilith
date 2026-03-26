@@ -57,7 +57,7 @@ export const data = new SlashCommandBuilder()
       .addUserOption((o) => o.setName("user").setDescription("Leave empty to reset everyone").setRequired(false))
   )
 
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

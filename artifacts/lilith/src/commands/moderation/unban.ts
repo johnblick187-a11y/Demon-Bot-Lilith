@@ -13,7 +13,7 @@ export const data = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt.setName("reason").setDescription("Reason for unban").setRequired(false)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

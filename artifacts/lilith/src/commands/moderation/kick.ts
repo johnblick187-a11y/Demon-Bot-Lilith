@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
   .addUserOption((opt) => opt.setName("user4").setDescription("Fourth user").setRequired(false))
   .addUserOption((opt) => opt.setName("user5").setDescription("Fifth user").setRequired(false))
   .addStringOption((opt) => opt.setName("reason").setDescription("Reason").setRequired(false))
-  .setDefaultMemberPermissions(PermissionFlagsBits.KickMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

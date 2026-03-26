@@ -249,7 +249,7 @@ export const data = new SlashCommandBuilder()
           )
       )
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;

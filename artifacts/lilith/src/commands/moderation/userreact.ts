@@ -31,7 +31,7 @@ export const data = new SlashCommandBuilder()
       .setName("list")
       .setDescription("List all user auto-reacts in this server")
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) return;

@@ -24,7 +24,7 @@ export const data = new SlashCommandBuilder()
       .setRequired(false)
       .setMinValue(1)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageMessages);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
   const channel = interaction.channel as TextChannel;

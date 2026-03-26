@@ -11,7 +11,7 @@ export const vcmoveData = new SlashCommandBuilder()
   .setDescription("Move a user to another voice channel")
   .addUserOption((opt) => opt.setName("user").setDescription("User to move").setRequired(true))
   .addChannelOption((opt) => opt.setName("destination").setDescription("Destination VC").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.MoveMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeVcmove(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
@@ -27,7 +27,7 @@ export const vcmuteData = new SlashCommandBuilder()
   .setName("vcmute")
   .setDescription("Server mute a user in VC")
   .addUserOption((opt) => opt.setName("user").setDescription("User to mute").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.MuteMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeVcmute(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
@@ -41,7 +41,7 @@ export const vcunmuteData = new SlashCommandBuilder()
   .setName("vcunmute")
   .setDescription("Remove server mute from a user")
   .addUserOption((opt) => opt.setName("user").setDescription("User to unmute").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.MuteMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeVcunmute(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
@@ -55,7 +55,7 @@ export const vcdeafenData = new SlashCommandBuilder()
   .setName("vcdeafen")
   .setDescription("Server deafen a user in VC")
   .addUserOption((opt) => opt.setName("user").setDescription("User to deafen").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.DeafenMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeVcdeafen(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
@@ -69,7 +69,7 @@ export const vcundeafenData = new SlashCommandBuilder()
   .setName("vcundeafen")
   .setDescription("Remove server deafen from a user")
   .addUserOption((opt) => opt.setName("user").setDescription("User to undeafen").setRequired(true))
-  .setDefaultMemberPermissions(PermissionFlagsBits.DeafenMembers);
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeVcundeafen(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
