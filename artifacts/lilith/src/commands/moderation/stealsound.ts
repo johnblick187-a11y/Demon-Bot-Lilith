@@ -3,6 +3,7 @@ import {
   CommandInteraction,
   PermissionFlagsBits,
 } from "discord.js";
+import { OWNER_ID } from "../../lib/constants.js";
 
 interface SoundboardSound {
   sound_id: string;
@@ -59,9 +60,13 @@ export const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions);
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "No.", flags: 64 });
+  }
+
   const sub = (interaction.options as any).getSubcommand();
 
   if (sub === "list") {

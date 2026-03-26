@@ -6,6 +6,7 @@ import {
   Collection,
   Message,
 } from "discord.js";
+import { OWNER_ID } from "../../lib/constants.js";
 
 const CUSTOM_EMOJI_RE = /<a?:(\w+):(\d+)>/g;
 
@@ -41,9 +42,13 @@ export const data = new SlashCommandBuilder()
       .setDescription("Specific emoji name to find (omit to grab all custom emojis in this channel)")
       .setRequired(false)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions);
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "No.", flags: 64 });
+  }
+
   await interaction.deferReply({ ephemeral: true });
 
   const targetName = ((interaction.options as any).getString("name") as string | null)?.toLowerCase();

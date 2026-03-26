@@ -7,6 +7,7 @@ import {
   Message,
   StickerFormatType,
 } from "discord.js";
+import { OWNER_ID } from "../../lib/constants.js";
 
 export const data = new SlashCommandBuilder()
   .setName("stealsticker")
@@ -23,9 +24,13 @@ export const data = new SlashCommandBuilder()
       .setDescription("Specific sticker name to find (omit to grab all stickers in this channel)")
       .setRequired(false)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions);
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "No.", flags: 64 });
+  }
+
   await interaction.deferReply({ ephemeral: true });
 
   const targetName = ((interaction.options as any).getString("name") as string | null)?.toLowerCase();
