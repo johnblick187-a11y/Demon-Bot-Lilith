@@ -22,7 +22,11 @@ async function tryOpenRouter(messages: any[], max_tokens = 800, temperature = 0.
     try {
       const response = await openrouter.chat.completions.create({ model, messages, max_tokens, temperature });
       const content = response.choices[0]?.message?.content;
-      if (content) return content;
+      if (content) {
+        console.log(`[OpenRouter] Responded via: ${model}`);
+        return content;
+      }
+      console.warn(`[OpenRouter] ${model} returned empty content, trying next...`);
     } catch (err: any) {
       const status = err?.status ?? err?.error?.code;
       if (status === 429 || status === 402 || status === 503 || status === 404) {
