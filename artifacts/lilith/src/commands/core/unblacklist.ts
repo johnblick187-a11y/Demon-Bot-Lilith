@@ -5,6 +5,7 @@ import { OWNER_ID } from "../../lib/constants.js";
 export const data = new SlashCommandBuilder()
   .setName("unblacklist")
   .setDescription("Remove a user from Lilith's blacklist (owner only)")
+  .setDefaultMemberPermissions(0n)
   .addUserOption((opt) =>
     opt.setName("user").setDescription("User to unblacklist").setRequired(true)
   );
