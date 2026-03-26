@@ -4,49 +4,226 @@ import {
   PermissionFlagsBits,
   ChannelType,
   TextChannel,
+  VoiceChannel,
+  CategoryChannel,
+  NewsChannel,
 } from "discord.js";
 
 export const data = new SlashCommandBuilder()
   .setName("channel")
-  .setDescription("Manage channels")
-  .addStringOption((opt) =>
-    opt
-      .setName("type")
-      .setDescription("Channel type")
-      .setRequired(true)
-      .addChoices({ name: "text", value: "text" }, { name: "voice", value: "voice" })
-  )
-  .addStringOption((opt) =>
-    opt
-      .setName("action")
-      .setDescription("Action to perform")
-      .setRequired(true)
-      .addChoices(
-        { name: "create", value: "create" },
-        { name: "delete", value: "delete" },
-        { name: "lock", value: "lock" }
+  .setDescription("Manage server channels")
+  .addSubcommand((sub) =>
+    sub
+      .setName("create")
+      .setDescription("Create a new channel")
+      .addStringOption((opt) =>
+        opt.setName("name").setDescription("Channel name").setRequired(true)
+      )
+      .addStringOption((opt) =>
+        opt
+          .setName("type")
+          .setDescription("Channel type")
+          .setRequired(false)
+          .addChoices(
+            { name: "text (default)", value: "text" },
+            { name: "voice", value: "voice" },
+            { name: "category", value: "category" },
+            { name: "announcement", value: "announcement" },
+            { name: "stage", value: "stage" },
+          )
+      )
+      .addChannelOption((opt) =>
+        opt
+          .setName("category")
+          .setDescription("Category to put it in")
+          .addChannelTypes(ChannelType.GuildCategory)
+          .setRequired(false)
       )
   )
-  .addStringOption((opt) => opt.setName("name").setDescription("Channel name").setRequired(false))
+  .addSubcommand((sub) =>
+    sub
+      .setName("delete")
+      .setDescription("Delete a channel")
+      .addChannelOption((opt) =>
+        opt.setName("channel").setDescription("Channel to delete (defaults to current)").setRequired(false)
+      )
+      .addStringOption((opt) =>
+        opt.setName("reason").setDescription("Reason for deletion").setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("lock")
+      .setDescription("Prevent @everyone from sending messages")
+      .addChannelOption((opt) =>
+        opt.setName("channel").setDescription("Channel to lock (defaults to current)").setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("unlock")
+      .setDescription("Restore @everyone send permissions")
+      .addChannelOption((opt) =>
+        opt.setName("channel").setDescription("Channel to unlock (defaults to current)").setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("rename")
+      .setDescription("Rename a channel")
+      .addStringOption((opt) =>
+        opt.setName("name").setDescription("New name").setRequired(true)
+      )
+      .addChannelOption((opt) =>
+        opt.setName("channel").setDescription("Channel to rename (defaults to current)").setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("topic")
+      .setDescription("Set a text channel's topic")
+      .addStringOption((opt) =>
+        opt.setName("text").setDescription("New topic (leave blank to clear)").setRequired(false)
+      )
+      .addChannelOption((opt) =>
+        opt
+          .setName("channel")
+          .setDescription("Channel to set topic on (defaults to current)")
+          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("slowmode")
+      .setDescription("Set slowmode on a channel")
+      .addIntegerOption((opt) =>
+        opt
+          .setName("seconds")
+          .setDescription("Seconds between messages (0 to disable)")
+          .setMinValue(0)
+          .setMaxValue(21600)
+          .setRequired(true)
+      )
+      .addChannelOption((opt) =>
+        opt
+          .setName("channel")
+          .setDescription("Channel to apply slowmode (defaults to current)")
+          .addChannelTypes(ChannelType.GuildText, ChannelType.GuildAnnouncement)
+          .setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("clone")
+      .setDescription("Clone a channel")
+      .addChannelOption((opt) =>
+        opt.setName("channel").setDescription("Channel to clone (defaults to current)").setRequired(false)
+      )
+  )
+  .addSubcommand((sub) =>
+    sub
+      .setName("nsfw")
+      .setDescription("Toggle NSFW flag on a text channel")
+      .addChannelOption((opt) =>
+        opt
+          .setName("channel")
+          .setDescription("Channel to toggle (defaults to current)")
+          .addChannelTypes(ChannelType.GuildText)
+          .setRequired(false)
+      )
+  )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
 
 export async function execute(interaction: CommandInteraction) {
-  const type = (interaction.options as any).getString("type", true);
-  const action = (interaction.options as any).getString("action", true);
-  const name = (interaction.options as any).getString("name") ?? "new-channel";
+  if (!interaction.guild) return;
+  const sub = (interaction.options as any).getSubcommand();
 
-  if (action === "create") {
-    const channelType = type === "text" ? ChannelType.GuildText : ChannelType.GuildVoice;
-    const ch = await interaction.guild?.channels.create({ name, type: channelType });
-    await interaction.reply(`✅ Created ${type} channel **${ch?.name}**.`);
-  } else if (action === "delete") {
-    const ch = interaction.guild?.channels.cache.find((c) => c.name === name);
-    if (!ch) return interaction.reply({ content: "Channel not found.", ephemeral: true });
-    await ch.delete();
-    await interaction.reply(`🗑️ Deleted channel **${name}**.`);
-  } else if (action === "lock") {
-    const ch = interaction.channel as TextChannel;
-    await ch.permissionOverwrites.edit(interaction.guild!.roles.everyone, { SendMessages: false });
-    await interaction.reply(`🔒 Channel locked.`);
+  if (sub === "create") {
+    const name     = (interaction.options as any).getString("name", true) as string;
+    const typeStr  = ((interaction.options as any).getString("type") ?? "text") as string;
+    const category = (interaction.options as any).getChannel("category") as CategoryChannel | null;
+
+    const typeMap: Record<string, ChannelType> = {
+      text:         ChannelType.GuildText,
+      voice:        ChannelType.GuildVoice,
+      category:     ChannelType.GuildCategory,
+      announcement: ChannelType.GuildAnnouncement,
+      stage:        ChannelType.GuildStageVoice,
+    };
+
+    const ch = await interaction.guild.channels.create({
+      name,
+      type: typeMap[typeStr] ?? ChannelType.GuildText,
+      parent: category?.id ?? undefined,
+    });
+
+    await interaction.reply(`✅ Created **${typeStr}** channel <#${ch.id}>.`);
+  }
+
+  else if (sub === "delete") {
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as any;
+    const reason = (interaction.options as any).getString("reason") ?? "No reason given.";
+    if (!target) return interaction.reply({ content: "No channel found.", flags: 64 });
+    const name = target.name;
+    try {
+      await target.delete(reason);
+      await interaction.reply(`🗑️ Deleted **#${name}**. Reason: *${reason}*`).catch(() => {});
+    } catch {
+      await interaction.reply({ content: "❌ Couldn't delete that channel. Check my permissions.", flags: 64 });
+    }
+  }
+
+  else if (sub === "lock") {
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as TextChannel;
+    await target.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false });
+    await interaction.reply(`🔒 <#${target.id}> locked. No one's talking in there.`);
+  }
+
+  else if (sub === "unlock") {
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as TextChannel;
+    await target.permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: null });
+    await interaction.reply(`🔓 <#${target.id}> unlocked.`);
+  }
+
+  else if (sub === "rename") {
+    const newName = (interaction.options as any).getString("name", true) as string;
+    const target  = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as any;
+    if (!target) return interaction.reply({ content: "No channel found.", flags: 64 });
+    const old = target.name;
+    await target.setName(newName);
+    await interaction.reply(`✅ Renamed **#${old}** → **#${newName}**.`);
+  }
+
+  else if (sub === "topic") {
+    const text   = ((interaction.options as any).getString("text") ?? "") as string;
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as TextChannel | NewsChannel;
+    await target.setTopic(text || null);
+    await interaction.reply(text ? `✅ Topic set on <#${target.id}>: *${text}*` : `✅ Topic cleared on <#${target.id}>.`);
+  }
+
+  else if (sub === "slowmode") {
+    const secs   = (interaction.options as any).getInteger("seconds", true) as number;
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as TextChannel;
+    await target.setRateLimitPerUser(secs);
+    await interaction.reply(
+      secs === 0
+        ? `✅ Slowmode disabled on <#${target.id}>.`
+        : `✅ Slowmode set to **${secs}s** on <#${target.id}>.`
+    );
+  }
+
+  else if (sub === "clone") {
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as any;
+    if (!target) return interaction.reply({ content: "No channel found.", flags: 64 });
+    const cloned = await target.clone();
+    await interaction.reply(`✅ Cloned <#${target.id}> → <#${cloned.id}>.`);
+  }
+
+  else if (sub === "nsfw") {
+    const target = ((interaction.options as any).getChannel("channel") ?? interaction.channel) as TextChannel;
+    const current = target.nsfw;
+    await target.setNSFW(!current);
+    await interaction.reply(`✅ <#${target.id}> NSFW is now **${!current ? "ON" : "OFF"}**.`);
   }
 }
