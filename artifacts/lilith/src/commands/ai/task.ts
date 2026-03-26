@@ -1,6 +1,12 @@
 import { SlashCommandBuilder, CommandInteraction } from "discord.js";
 import { askLilith } from "../../lib/ai.js";
-import { getRelation, updateRelation } from "../../lib/db.js";
+import {
+  getRelation,
+  updateRelation,
+  getConversationHistory,
+  getConversationSummaryRecord,
+  saveConversationTurn,
+} from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
 export const data = new SlashCommandBuilder()
@@ -15,11 +21,17 @@ export async function execute(interaction: CommandInteraction) {
 
   const prompt = (interaction.options as any).getString("prompt", true);
   const userId = interaction.user.id;
+  const guildId = interaction.guildId ?? "DM";
   const isOwner = userId === OWNER_ID;
 
   const rel = isOwner
-    ? { affinity: 100, annoyance: 0 }
+    ? { affinity: 100, annoyance: 0, enemy: false }
     : await getRelation(userId, interaction.user.username);
+
+  const [history, summaryRecord] = await Promise.all([
+    getConversationHistory(guildId, userId),
+    getConversationSummaryRecord(guildId, userId),
+  ]);
 
   const response = await askLilith(prompt, {
     userId,
@@ -28,6 +40,9 @@ export async function execute(interaction: CommandInteraction) {
     annoyance: rel.annoyance,
     isOwner,
     mode: "task",
+    enemy: (rel as any).enemy ?? false,
+    history,
+    memorySummary: summaryRecord?.summary ?? null,
   });
 
   if (!isOwner) {
@@ -35,4 +50,5 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   await interaction.editReply(`**Task Mode**\n${response}`);
+  await saveConversationTurn(guildId, userId, prompt, response).catch(() => {});
 }

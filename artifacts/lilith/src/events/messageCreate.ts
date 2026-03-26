@@ -24,8 +24,6 @@ import {
   getLevelRoleForLevel,
   getDmNsfwEnabled,
   setDmNsfwEnabled,
-  getGlobalChaosMode,
-  setGlobalChaosMode,
   getLilithMoodData,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";

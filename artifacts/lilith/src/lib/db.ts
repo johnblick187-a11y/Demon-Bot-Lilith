@@ -1283,15 +1283,3 @@ export async function setDmNsfwEnabled(enabled: boolean): Promise<void> {
   );
 }
 
-export async function getGlobalChaosMode(): Promise<boolean> {
-  const res = await pool.query(`SELECT value FROM bot_settings WHERE key = 'global_chaos_mode'`);
-  return res.rows[0]?.value === "true";
-}
-
-export async function setGlobalChaosMode(enabled: boolean): Promise<void> {
-  await pool.query(
-    `INSERT INTO bot_settings (key, value) VALUES ('global_chaos_mode', $1)
-     ON CONFLICT (key) DO UPDATE SET value = $1`,
-    [enabled ? "true" : "false"]
-  );
-}

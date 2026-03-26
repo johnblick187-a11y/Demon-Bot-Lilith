@@ -17,11 +17,11 @@ export async function execute(interaction: CommandInteraction) {
   const isOwner = userId === OWNER_ID;
 
   const rel = isOwner
-    ? { affinity: 100, annoyance: 0 }
+    ? { affinity: 100, annoyance: 0, enemy: false }
     : await getRelation(userId, interaction.user.username);
 
   const response = await askLilith(
-    `Search query: "${query}". Provide a concise, informative answer as if you looked this up. Include any relevant facts. Stay in character.`,
+    `Search query: "${query}". Answer from your knowledge — be informative but stay in character. Note if you're uncertain about current or recent information.`,
     {
       userId,
       username: interaction.user.username,
@@ -29,6 +29,7 @@ export async function execute(interaction: CommandInteraction) {
       annoyance: rel.annoyance,
       isOwner,
       mode: "task",
+      enemy: (rel as any).enemy ?? false,
     }
   );
 
@@ -36,7 +37,7 @@ export async function execute(interaction: CommandInteraction) {
     .setTitle(`🔍 ${query}`)
     .setColor(0x8b0000)
     .setDescription(response)
-    .setFooter({ text: "Lilith Search — You're welcome, I guess." });
+    .setFooter({ text: "Lilith Search — results may not reflect recent events." });
 
   await interaction.editReply({ embeds: [embed] });
 }
