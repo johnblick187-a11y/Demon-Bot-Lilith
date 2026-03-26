@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction } from "discord.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
 export const data = new SlashCommandBuilder()
@@ -10,9 +10,13 @@ export const data = new SlashCommandBuilder()
   .addStringOption((opt) =>
     opt.setName("message").setDescription("What to say").setRequired(true)
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "No.", flags: 64 });
+  }
+
   const target = (interaction.options as any).getUser("user", true);
   const message = (interaction.options as any).getString("message", true) as string;
 
