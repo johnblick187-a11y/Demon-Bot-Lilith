@@ -30,3 +30,27 @@ id = "DZ95_3RcUqwM0K1mmFftU"
 uri = "file://artifacts/lilith/src/assets/emojis/lilith_sleepy.png"
 type = "image"
 title = "lilith_sleepy"
+
+[[outputs]]
+id = "TS689ftB0iqFEH97GgsUy"
+uri = "file://attached_assets/generated_images/lilith_emoji_smirk.png"
+type = "image"
+title = "Lilith — Smirk"
+
+[[outputs]]
+id = "wB-tI4YGeLo6TI5H7vqAO"
+uri = "file://attached_assets/generated_images/lilith_emoji_rage.png"
+type = "image"
+title = "Lilith — Rage"
+
+[[outputs]]
+id = "bAKsXurMvW7JYz6lWEuv5"
+uri = "file://attached_assets/generated_images/lilith_emoji_sideeye.png"
+type = "image"
+title = "Lilith — Side-eye"
+
+[[outputs]]
+id = "wQxJ28cLDU0uBv9exyxr7"
+uri = "file://attached_assets/generated_images/lilith_emoji_laugh.png"
+type = "image"
+title = "Lilith — Laugh"
