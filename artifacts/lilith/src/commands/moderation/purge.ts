@@ -34,7 +34,7 @@ export async function execute(interaction: CommandInteraction) {
 
   const isOwner = interaction.user.id === OWNER_ID;
   const rawLimit = (interaction.options as any).getInteger("count") as number | null;
-  const limit = !isOwner ? Math.min(rawLimit ?? 100, 100) : rawLimit;
+  const limit = !isOwner ? Math.min(rawLimit ?? 1000, 1000) : rawLimit;
 
   await interaction.deferReply({ ephemeral: true });
 
