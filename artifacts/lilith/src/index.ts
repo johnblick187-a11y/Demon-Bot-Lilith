@@ -343,30 +343,6 @@ client.on("channelDelete", (channel) => handleChannelDelete(channel as any));
 client.on("guildBanAdd", (ban) => handleGuildBanAdd(ban));
 client.on("roleDelete", (role) => handleRoleDelete(role));
 
-// Commands that make sense in DMs — registered globally so they appear in the DM command picker
-const dmCommandDefs = [
-  dmmode.data,
-  override.data,
-  memory.data,
-  help.data,
-  status.data,
-  mood.data,
-  affinity.data,
-  annoyance.data,
-  ask.data,
-  task.data,
-  tldr.data,
-  ship.data,
-  smashData,
-  blowData,
-  tts.data,
-  generate.data,
-  hitsmethData,
-  hitsweedData,
-  chugsdrinkData,
-  popspillData,
-  ...actionCommands.map((c) => c.data),
-];
 
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN!);
@@ -376,27 +352,25 @@ async function registerCommands() {
     return;
   }
 
-  const body = allCommandDefs.map((c) => c.toJSON());
-
-  // Register to every joined guild instantly (no propagation delay)
+  // Clear all guild-specific commands so slash commands don't appear in servers
   const guildIds = [...client.guilds.cache.keys()];
   for (const guildId of guildIds) {
     try {
-      await rest.put(Routes.applicationGuildCommands(appId, guildId), { body });
-      console.log(`Registered ${allCommandDefs.length} commands in guild ${guildId}`);
+      await rest.put(Routes.applicationGuildCommands(appId, guildId), { body: [] });
+      console.log(`Cleared guild commands in guild ${guildId}`);
     } catch (err) {
-      console.error(`Failed to register commands in guild ${guildId}:`, err);
+      console.error(`Failed to clear commands in guild ${guildId}:`, err);
     }
   }
 
-  // Register DM-appropriate commands globally so they show in the DM command picker
-  // Guild commands take priority in servers so there is no duplication in server pickers
+  // Register all commands globally — they appear in DMs and are still callable in servers
+  // but won't clutter server slash menus since guild commands are cleared
   try {
-    const dmBody = dmCommandDefs.map((c) => c.toJSON());
-    await rest.put(Routes.applicationCommands(appId), { body: dmBody });
-    console.log(`Registered ${dmCommandDefs.length} commands globally for DMs.`);
+    const body = allCommandDefs.map((c) => c.toJSON());
+    await rest.put(Routes.applicationCommands(appId), { body });
+    console.log(`Registered ${allCommandDefs.length} commands globally.`);
   } catch (err) {
-    console.error("Failed to register global DM commands:", err);
+    console.error("Failed to register global commands:", err);
   }
 }
 
