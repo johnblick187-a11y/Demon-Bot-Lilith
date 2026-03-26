@@ -27,7 +27,7 @@ async function fetchGif(query: string, fallbackQuery?: string): Promise<string |
   return (await tryFetch(query)) ?? (fallbackQuery ? await tryFetch(fallbackQuery) : null);
 }
 
-const VIOLENT_ACTIONS = ["punch", "slap", "headbutt", "stab", "shoot", "insult", "bite"];
+const VIOLENT_ACTIONS = ["punch", "slap", "headbutt", "stab", "shoot", "roast", "bite"];
 
 const RETALIATION_MSGS = [
   "That's tweakbrazy. **{actor}** just made the worst decision of their server life.",
@@ -162,9 +162,9 @@ const ACTIONS: ActionDef[] = [
     annoyanceDelta: ANNOYANCE_TABLE.shoot,
   },
   {
-    name: "insult",
-    description: "Insult a user",
-    emoji: "😈",
+    name: "roast",
+    description: "Roast a user",
+    emoji: "🔥",
     phrases: [
       "{target}, you are the reason people fake emergencies to leave rooms. Every single time.",
       "{target}, your existence is a courtesy nobody extended.",
@@ -187,7 +187,7 @@ const ACTIONS: ActionDef[] = [
       "{target}, the most powerful thing about you is how consistently you disappoint people.",
       "{target}, you're the kind of person people describe as 'harmless' because there's nothing else to say.",
     ],
-    annoyanceDelta: ANNOYANCE_TABLE.insult,
+    annoyanceDelta: ANNOYANCE_TABLE.roast,
   },
   {
     name: "pickup",

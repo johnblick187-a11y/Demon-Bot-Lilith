@@ -7,7 +7,7 @@ export const ANNOYANCE_TABLE = {
   punch:        4,
   slap:         3,
   headbutt:     2,
-  insult:       5,
+  roast:        5,
   stab:         8,
   shoot:        8,
   nsfw_on_lilith: 50,

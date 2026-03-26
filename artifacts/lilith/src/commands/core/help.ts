@@ -12,7 +12,7 @@ const COMMAND_LIST = `
 
 **🧠 AI:** /ask /task /nsfwtoggle /google
 
-**😈 Interaction:** /punch /slap /bite /headbutt /stab /shoot /insult /pickup /ship /smash /blow
+**😈 Interaction:** /punch /slap /bite /headbutt /stab /shoot /roast /pickup /ship /smash /blow
 
 **🚨 Moderation:** /ban /kick /warn /timeout /rename /makerole /editrole /deleterole /purge /channel /avatar /banner /info /autoreact /autoreply
 
