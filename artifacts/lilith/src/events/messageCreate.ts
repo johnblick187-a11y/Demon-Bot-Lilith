@@ -280,12 +280,11 @@ export async function handleMessageCreate(message: Message, client: Client) {
   // If the owner sounds angry, jump in and tear apart whoever they're mad at
   if (userId === OWNER_ID) {
     const ANGER_TRIGGERS = [
-      /\bwtf\b/i, /\bstfu\b/i, /\bshut up\b/i, /\bfuck (you|off|this|that|him|her|them)\b/i,
-      /\bidiot\b/i, /\bstupid\b/i, /\bmoron\b/i, /\bclown\b/i, /\bdumbass\b/i, /\bdum(b)?\b/i,
-      /\bare you (serious|kidding|dumb|stupid|blind)\b/i, /\bget out\b/i, /\bgo away\b/i,
-      /\bannoy(ing|ed)\b/i, /\bpiss(ed|ing)\b/i, /\bdon'?t (talk|message|ping|dm) me\b/i,
-      /\bleave me alone\b/i, /\bwhat the (hell|fuck|actual)\b/i, /\bbro (stop|shut|stfu)\b/i,
-      /\byo stfu\b/i, /\bbruh\b/i, /\bkys\b/i, /\bscrew (you|off)\b/i,
+      /\bstfu\b/i, /\bshut up\b/i, /\bfuck (you|off|him|her|them)\b/i,
+      /\bidiot\b/i, /\bstupid\b/i, /\bmoron\b/i, /\bclown\b/i, /\bdumbass\b/i,
+      /\bare you (serious|kidding|dumb|stupid|blind)\b/i,
+      /\bdon'?t (talk|message|ping|dm) me\b/i, /\bleave me alone\b/i,
+      /\bpiss(ed|ing) me off\b/i, /\bkys\b/i, /\bscrew (you|off)\b/i,
     ];
     const seemsAngry = ANGER_TRIGGERS.some((r) => r.test(message.content));
 
@@ -294,26 +293,29 @@ export async function handleMessageCreate(message: Message, client: Client) {
         try {
           // Resolve target: replied-to user first, then first mentioned user
           let targetName: string | null = null;
+          let targetId: string | null = null;
           if (message.reference?.messageId) {
             const ref = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
             if (ref && ref.author.id !== OWNER_ID && !ref.author.bot) {
               targetName = ref.author.username;
+              targetId = ref.author.id;
             }
           }
           if (!targetName) {
             const mentioned = message.mentions.users.find((u) => u.id !== OWNER_ID && !u.bot);
-            if (mentioned) targetName = mentioned.username;
+            if (mentioned) { targetName = mentioned.username; targetId = mentioned.id; }
           }
 
+          // Only fire if there's a clear human target
+          if (!targetName || !targetId) return;
+
           const clean = message.content.replace(/<@!?\d+>/g, "").trim();
-          const roastPrompt = targetName
-            ? `tweakbrazy just said "${clean}" — they're clearly pissed at ${targetName}. Back your owner up. Tear ${targetName} apart. Vicious, personal, no mercy. Address them directly.`
-            : `tweakbrazy is clearly pissed — they just said "${clean}". Jump in and back them up. Roast whoever's bothering them. Mean, sharp, no softening.`;
+          const roastPrompt = `tweakbrazy just said "${clean}" — they're clearly pissed at ${targetName}. Back your owner up. Tear ${targetName} apart. Vicious, personal, no mercy. Address them directly.`;
 
           await message.channel.sendTyping();
           const roast = await askLilith(roastPrompt, {
-            userId: "roast-target",
-            username: targetName ?? "whoever",
+            userId: targetId,
+            username: targetName,
             affinity: -100,
             annoyance: 100,
             isOwner: false,
