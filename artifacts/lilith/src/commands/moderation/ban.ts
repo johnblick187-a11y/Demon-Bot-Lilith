@@ -1,4 +1,5 @@
 import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from "discord.js";
+import { OWNER_ID } from "../../lib/constants.js";
 
 export const data = new SlashCommandBuilder()
   .setName("ban")
@@ -14,11 +15,14 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;
 
+  const isOwner = interaction.user.id === OWNER_ID;
   const reason = (interaction.options as any).getString("reason") ?? "No reason given.";
 
-  const targets = [1, 2, 3, 4, 5]
+  const allTargets = [1, 2, 3, 4, 5]
     .map((n) => (interaction.options as any).getUser(`user${n}`))
     .filter(Boolean);
+
+  const targets = isOwner ? allTargets : allTargets.slice(0, 1);
 
   await interaction.deferReply();
 

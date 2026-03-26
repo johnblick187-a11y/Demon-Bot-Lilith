@@ -6,6 +6,7 @@ import {
   Collection,
   Message,
 } from "discord.js";
+import { OWNER_ID } from "../../lib/constants.js";
 
 const FOURTEEN_DAYS = 14 * 24 * 60 * 60 * 1000;
 
@@ -31,7 +32,9 @@ export async function execute(interaction: CommandInteraction) {
     return interaction.reply({ content: "Can't purge this channel.", ephemeral: true });
   }
 
-  const limit = (interaction.options as any).getInteger("count") as number | null;
+  const isOwner = interaction.user.id === OWNER_ID;
+  const rawLimit = (interaction.options as any).getInteger("count") as number | null;
+  const limit = !isOwner ? Math.min(rawLimit ?? 100, 100) : rawLimit;
 
   await interaction.deferReply({ ephemeral: true });
 
