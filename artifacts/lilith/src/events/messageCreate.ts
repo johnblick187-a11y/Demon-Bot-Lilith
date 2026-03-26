@@ -277,26 +277,53 @@ export async function handleMessageCreate(message: Message, client: Client) {
     try { await message.react(pick); } catch {}
   }
 
-  // If someone pings the owner, savage roast them
-  if (userId !== OWNER_ID && message.mentions.users.has(OWNER_ID)) {
-    (async () => {
-      try {
-        await message.channel.sendTyping();
-        const clean = message.content.replace(/<@!?\d+>/g, "").trim();
-        const roastPrompt = `${message.author.username} just pinged tweakbrazy in the server${clean ? `, saying: "${clean}"` : ""}. Tear them apart. Be vicious, personal, and savage — address them directly with an all-out roast. No softening. They bothered your owner.`;
-        const roast = await askLilith(roastPrompt, {
-          userId,
-          username: message.author.username,
-          affinity: -100,
-          annoyance: 100,
-          isOwner: false,
-          enemy: false,
-          mode: "chat",
-        });
-        await message.reply(roast);
-      } catch {}
-    })().catch(() => {});
-    return;
+  // If the owner sounds angry, jump in and tear apart whoever they're mad at
+  if (userId === OWNER_ID) {
+    const ANGER_TRIGGERS = [
+      /\bwtf\b/i, /\bstfu\b/i, /\bshut up\b/i, /\bfuck (you|off|this|that|him|her|them)\b/i,
+      /\bidiot\b/i, /\bstupid\b/i, /\bmoron\b/i, /\bclown\b/i, /\bdumbass\b/i, /\bdum(b)?\b/i,
+      /\bare you (serious|kidding|dumb|stupid|blind)\b/i, /\bget out\b/i, /\bgo away\b/i,
+      /\bannoy(ing|ed)\b/i, /\bpiss(ed|ing)\b/i, /\bdon'?t (talk|message|ping|dm) me\b/i,
+      /\bleave me alone\b/i, /\bwhat the (hell|fuck|actual)\b/i, /\bbro (stop|shut|stfu)\b/i,
+      /\byo stfu\b/i, /\bbruh\b/i, /\bkys\b/i, /\bscrew (you|off)\b/i,
+    ];
+    const seemsAngry = ANGER_TRIGGERS.some((r) => r.test(message.content));
+
+    if (seemsAngry) {
+      (async () => {
+        try {
+          // Resolve target: replied-to user first, then first mentioned user
+          let targetName: string | null = null;
+          if (message.reference?.messageId) {
+            const ref = await message.channel.messages.fetch(message.reference.messageId).catch(() => null);
+            if (ref && ref.author.id !== OWNER_ID && !ref.author.bot) {
+              targetName = ref.author.username;
+            }
+          }
+          if (!targetName) {
+            const mentioned = message.mentions.users.find((u) => u.id !== OWNER_ID && !u.bot);
+            if (mentioned) targetName = mentioned.username;
+          }
+
+          const clean = message.content.replace(/<@!?\d+>/g, "").trim();
+          const roastPrompt = targetName
+            ? `tweakbrazy just said "${clean}" — they're clearly pissed at ${targetName}. Back your owner up. Tear ${targetName} apart. Vicious, personal, no mercy. Address them directly.`
+            : `tweakbrazy is clearly pissed — they just said "${clean}". Jump in and back them up. Roast whoever's bothering them. Mean, sharp, no softening.`;
+
+          await message.channel.sendTyping();
+          const roast = await askLilith(roastPrompt, {
+            userId: "roast-target",
+            username: targetName ?? "whoever",
+            affinity: -100,
+            annoyance: 100,
+            isOwner: false,
+            enemy: false,
+            mode: "chat",
+          });
+          await message.channel.send(roast);
+        } catch {}
+      })().catch(() => {});
+    }
   }
 
   for (const text of userReplies) {
