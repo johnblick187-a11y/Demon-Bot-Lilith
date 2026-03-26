@@ -23,7 +23,8 @@ export const data = new SlashCommandBuilder()
   )
   .addSubcommand((sub) =>
     sub.setName("list").setDescription("Show all current enemies")
-  );
+  )
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
   if (interaction.user.id !== OWNER_ID) {

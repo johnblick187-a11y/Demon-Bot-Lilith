@@ -4,10 +4,11 @@ import {
   AudioPlayerStatus,
   VoiceConnection,
   AudioPlayer,
-  StreamType,
+  NoSubscriberBehavior,
+  demuxProbe,
 } from "@discordjs/voice";
-import { spawn } from "child_process";
 import { Readable } from "stream";
+import play from "play-dl";
 
 interface QueueEntry {
   title: string;
@@ -25,6 +26,15 @@ interface GuildMusic {
 
 const guildMusicMap = new Map<string, GuildMusic>();
 
+void play.setToken({
+  youtube: {
+    cookie: process.env.YOUTUBE_COOKIE,
+  },
+  soundcloud: {
+    client_id: process.env.SOUNDCLOUD_CLIENT_ID,
+  },
+});
+
 export function getMusicState(guildId: string): GuildMusic | undefined {
   return guildMusicMap.get(guildId);
 }
@@ -37,58 +47,77 @@ export function deleteMusicState(guildId: string) {
   guildMusicMap.delete(guildId);
 }
 
-function ytDlpSearch(query: string): Promise<{ title: string; url: string } | null> {
-  return new Promise((resolve) => {
-    const searchTarget = query.startsWith("http") ? query : `ytsearch1:${query}`;
-    const proc = spawn("yt-dlp", [
-      searchTarget,
-      "--no-playlist",
-      "--print", "%(title)s|||%(webpage_url)s",
-      "--no-warnings",
-      "--quiet",
-    ]);
+async function resolveTrack(query: string): Promise<{ title: string; url: string } | null> {
+  try {
+    if (play.yt_validate(query) === "video") {
+      const info = await play.video_basic_info(query);
+      return {
+        title: info.video_details.title ?? "YouTube video",
+        url: info.video_details.url,
+      };
+    }
 
-    let output = "";
-    proc.stdout.on("data", (chunk) => { output += chunk.toString(); });
-    proc.stderr.on("data", () => {});
+    if (play.sp_validate(query) === "track") {
+      const sp = await play.spotify(query);
+      const track = await sp.fetch();
+      const search = `${track.name} ${track.artists?.map((a) => a.name).join(" ") ?? ""}`.trim();
+      return await resolveTrack(search);
+    }
 
-    proc.on("close", () => {
-      const line = output.trim().split("\n")[0];
-      if (!line || !line.includes("|||")) return resolve(null);
-      const [title, url] = line.split("|||");
-      if (!title || !url) return resolve(null);
-      resolve({ title: title.trim(), url: url.trim() });
+    if (play.so_validate(query) === "track") {
+      const info = await play.soundcloud(query);
+      return {
+        title: info.name ?? "SoundCloud track",
+        url: info.url,
+      };
+    }
+
+    const results = await play.search(query, {
+      limit: 1,
+      source: { youtube: "video" },
     });
 
-    proc.on("error", () => resolve(null));
-    setTimeout(() => { proc.kill(); resolve(null); }, 15_000);
-  });
+    const first = results[0];
+    if (!first) return null;
+
+    return {
+      title: first.title ?? "Unknown title",
+      url: first.url,
+    };
+  } catch {
+    return null;
+  }
 }
 
-function streamViaYtDlp(url: string): Readable {
-  const proc = spawn("yt-dlp", [
-    "-f", "bestaudio",
-    "--no-playlist",
-    "-o", "-",
-    "--quiet",
-    url,
-  ]);
-  proc.stderr.on("data", () => {});
-  proc.on("error", () => {});
-  return proc.stdout as unknown as Readable;
-}
+async function createResourceForEntry(entry: QueueEntry) {
+  if (entry.isDirect) {
+    const response = await fetch(entry.url);
+    if (!response.ok || !response.body) {
+      throw new Error(`Failed to fetch direct file: ${response.status}`);
+    }
 
-function streamDirectUrl(url: string): Readable {
-  const proc = spawn("ffmpeg", [
-    "-i", url,
-    "-f", "s16le",
-    "-ar", "48000",
-    "-ac", "2",
-    "pipe:1",
-  ]);
-  proc.stderr.on("data", () => {});
-  proc.on("error", () => {});
-  return proc.stdout as unknown as Readable;
+    const webStream = response.body as unknown as ReadableStream<Uint8Array>;
+    const nodeStream = Readable.fromWeb(webStream);
+    const probed = await demuxProbe(nodeStream);
+
+    return createAudioResource(probed.stream, {
+      inputType: probed.type,
+    });
+  }
+
+  if (play.yt_validate(entry.url) === "video" || play.so_validate(entry.url) === "track") {
+    const stream = await play.stream(entry.url, {
+      discordPlayerCompatibility: true,
+      quality: 2,
+    });
+
+    return createAudioResource(stream.stream, {
+      inputType: stream.type,
+      inlineVolume: false,
+    });
+  }
+
+  throw new Error("Unsupported track source");
 }
 
 export async function searchAndQueue(
@@ -96,16 +125,21 @@ export async function searchAndQueue(
   query: string,
   requestedBy: string
 ): Promise<{ title: string; queued: boolean } | null> {
-  const result = await ytDlpSearch(query);
+  const result = await resolveTrack(query);
   if (!result) return null;
 
   const state = guildMusicMap.get(guildId);
   if (!state) return null;
 
-  const entry: QueueEntry = { title: result.title, url: result.url, requestedBy };
+  const entry: QueueEntry = {
+    title: result.title,
+    url: result.url,
+    requestedBy,
+  };
+
   state.queue.push(entry);
 
-  if (state.player.state.status === AudioPlayerStatus.Idle) {
+  if (state.player.state.status === AudioPlayerStatus.Idle && !state.currentSong) {
     await playNext(guildId);
     return { title: result.title, queued: false };
   }
@@ -115,22 +149,29 @@ export async function searchAndQueue(
 
 export async function playNext(guildId: string): Promise<boolean> {
   const state = guildMusicMap.get(guildId);
-  if (!state || state.queue.length === 0) {
-    if (state) state.currentSong = null;
+  if (!state) return false;
+
+  const next = state.queue.shift();
+  if (!next) {
+    state.currentSong = null;
     return false;
   }
 
-  const next = state.queue.shift()!;
   state.currentSong = next;
 
   try {
-    const stream = next.isDirect ? streamDirectUrl(next.url) : streamViaYtDlp(next.url);
-    const resource = createAudioResource(stream, {
-      inputType: next.isDirect ? StreamType.Raw : StreamType.Arbitrary,
-    });
+    const resource = await createResourceForEntry(next);
     state.player.play(resource);
     return true;
-  } catch {
+  } catch (error) {
+    console.error("[music] failed to play track", {
+      guildId,
+      title: next.title,
+      url: next.url,
+      error,
+    });
+
+    state.currentSong = null;
     return await playNext(guildId);
   }
 }
@@ -144,26 +185,49 @@ export function queueDirectFile(
   const state = guildMusicMap.get(guildId);
   if (!state) return null;
 
-  const entry: QueueEntry = { title, url, requestedBy, isDirect: true };
+  const entry: QueueEntry = {
+    title,
+    url,
+    requestedBy,
+    isDirect: true,
+  };
+
   state.queue.push(entry);
 
-  if (state.player.state.status === AudioPlayerStatus.Idle) {
-    playNext(guildId);
+  if (state.player.state.status === AudioPlayerStatus.Idle && !state.currentSong) {
+    void playNext(guildId);
     return { queued: false };
   }
+
   return { queued: true };
 }
 
-export function createMusicPlayer(guildId: string, connection: VoiceConnection): AudioPlayer {
-  const player = createAudioPlayer();
+export function createMusicPlayer(
+  guildId: string,
+  connection: VoiceConnection
+): AudioPlayer {
+  const player = createAudioPlayer({
+    behaviors: {
+      noSubscriber: NoSubscriberBehavior.Pause,
+    },
+  });
 
   player.on(AudioPlayerStatus.Idle, async () => {
     const state = guildMusicMap.get(guildId);
-    if (state && state.queue.length > 0) {
-      await playNext(guildId);
-    } else if (state) {
-      state.currentSong = null;
-    }
+    if (!state) return;
+
+    state.currentSong = null;
+    await playNext(guildId);
+  });
+
+  player.on("error", async (error) => {
+    console.error("[music] audio player error", { guildId, error });
+
+    const state = guildMusicMap.get(guildId);
+    if (!state) return;
+
+    state.currentSong = null;
+    await playNext(guildId);
   });
 
   connection.subscribe(player);

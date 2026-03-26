@@ -24,9 +24,12 @@ export const data = new SlashCommandBuilder()
         { name: "channel", value: "channel" }
       )
   )
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "Not for you.", flags: 64 });
+  }
   if (!interaction.guild) return interaction.reply({ content: "Guild only.", flags: 64 });
 
   const scope = (interaction.options as any).getString("scope", true);
