@@ -5,6 +5,7 @@ import {
   TextChannel,
   EmbedBuilder,
 } from "discord.js";
+import { OWNER_ID } from "../../lib/constants.js";
 
 export const data = new SlashCommandBuilder()
   .setName("webhook")
@@ -46,9 +47,12 @@ export const data = new SlashCommandBuilder()
       .addStringOption((o) => o.setName("id").setDescription("Webhook ID").setRequired(true))
   )
 
-  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "Not for you.", flags: 64 });
+  }
   if (!interaction.guild) return;
   const sub = (interaction.options as any).getSubcommand();
   const opts = interaction.options as any;
