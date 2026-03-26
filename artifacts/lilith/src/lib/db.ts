@@ -339,6 +339,30 @@ export async function updateRelation(
   return res.rows[0];
 }
 
+export async function setRelationDirect(
+  userId: string,
+  username: string,
+  fields: { affinity?: number; annoyance?: number }
+): Promise<void> {
+  await getRelation(userId, username); // ensure row exists
+  if (fields.affinity !== undefined && fields.annoyance !== undefined) {
+    await pool.query(
+      `UPDATE user_relations SET affinity=$1, annoyance=$2, last_annoyance_update=NOW() WHERE user_id=$3`,
+      [Math.max(-100, Math.min(100, fields.affinity)), Math.max(0, Math.min(100, fields.annoyance)), userId]
+    );
+  } else if (fields.affinity !== undefined) {
+    await pool.query(
+      `UPDATE user_relations SET affinity=$1 WHERE user_id=$2`,
+      [Math.max(-100, Math.min(100, fields.affinity)), userId]
+    );
+  } else if (fields.annoyance !== undefined) {
+    await pool.query(
+      `UPDATE user_relations SET annoyance=$1, last_annoyance_update=NOW() WHERE user_id=$2`,
+      [Math.max(0, Math.min(100, fields.annoyance)), userId]
+    );
+  }
+}
+
 export async function markEnemy(userId: string, isEnemy: boolean): Promise<void> {
   await pool.query(
     `UPDATE user_relations SET enemy=$2, annoyance=CASE WHEN $2 THEN 100 ELSE annoyance END, affinity=CASE WHEN $2 THEN -100 ELSE affinity END WHERE user_id=$1`,
