@@ -11,6 +11,7 @@ import {
   recordCustomCommandUsage,
   getChatEnabled,
   getUserAutoreacts,
+  getUserAutoreplies,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
 import { askLilith, computeMode } from "../lib/ai.js";
@@ -47,13 +48,14 @@ export async function handleMessageCreate(message: Message, client: Client) {
   const content = message.content;
   const contentLower = content.toLowerCase();
 
-  const [reacts, replies, guildPrefix, userPrefix, allCommands, userEmojis] = await Promise.all([
+  const [reacts, replies, guildPrefix, userPrefix, allCommands, userEmojis, userReplies] = await Promise.all([
     getAutoreacts(message.guild.id),
     getAutoreplies(message.guild.id),
     getGuildPrefix(message.guild.id),
     getGuildUserPrefix(message.guild.id, userId),
     getCustomCommands(message.guild.id),
     getUserAutoreacts(message.guild.id, userId),
+    getUserAutoreplies(message.guild.id, userId),
   ]);
 
   const effectivePrefix = userPrefix ?? guildPrefix;
@@ -68,6 +70,10 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
   for (const emoji of userEmojis) {
     try { await message.react(emoji); } catch {}
+  }
+
+  for (const text of userReplies) {
+    try { await message.reply(text); } catch {}
   }
 
   for (const reply of replies) {
