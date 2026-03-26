@@ -270,6 +270,13 @@ export async function handleMessageCreate(message: Message, client: Client) {
     try { await message.react(emoji); } catch {}
   }
 
+  // Always react to owner messages
+  if (userId === OWNER_ID) {
+    const ownerReacts = ["🖤", "🔥", "😈", "💜", "👁️"];
+    const pick = ownerReacts[Math.floor(Math.random() * ownerReacts.length)];
+    try { await message.react(pick); } catch {}
+  }
+
   for (const text of userReplies) {
     try { await message.reply(text); } catch {}
   }
