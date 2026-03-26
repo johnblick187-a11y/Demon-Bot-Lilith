@@ -247,17 +247,29 @@ async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN!);
   const appId = (await client.application?.fetch())?.id;
   if (!appId) {
-    console.log("Could not fetch app ID for command registration. Skipping global registration.");
+    console.log("Could not fetch app ID for command registration. Skipping.");
     return;
   }
+
+  const body = allCommandDefs.map((c) => c.toJSON());
+
+  // Register to every joined guild instantly (no propagation delay)
+  const guildIds = [...client.guilds.cache.keys()];
+  for (const guildId of guildIds) {
+    try {
+      await rest.put(Routes.applicationGuildCommands(appId, guildId), { body });
+      console.log(`Registered ${allCommandDefs.length} commands in guild ${guildId}`);
+    } catch (err) {
+      console.error(`Failed to register commands in guild ${guildId}:`, err);
+    }
+  }
+
+  // Also register globally so new guilds the bot joins pick them up
   try {
-    console.log("Registering slash commands globally...");
-    await rest.put(Routes.applicationCommands(appId), {
-      body: allCommandDefs.map((c) => c.toJSON()),
-    });
-    console.log(`Registered ${allCommandDefs.length} slash commands.`);
+    await rest.put(Routes.applicationCommands(appId), { body });
+    console.log(`Registered ${allCommandDefs.length} slash commands globally.`);
   } catch (err) {
-    console.error("Failed to register commands:", err);
+    console.error("Failed to register global commands:", err);
   }
 }
 
