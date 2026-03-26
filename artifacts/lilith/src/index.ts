@@ -38,6 +38,7 @@ import {
 } from "./commands/interaction/nsfw_actions.js";
 
 import * as ban from "./commands/moderation/ban.js";
+import * as unban from "./commands/moderation/unban.js";
 import * as kick from "./commands/moderation/kick.js";
 import * as warn from "./commands/moderation/warn.js";
 import * as timeout from "./commands/moderation/timeout.js";
@@ -125,6 +126,7 @@ const allCommandDefs: any[] = [
   smashData,
   blowData,
   ban.data,
+  unban.data,
   kick.data,
   warn.data,
   timeout.data,
@@ -183,6 +185,7 @@ commandMap.set("ship", (i) => ship.execute(i));
 commandMap.set("smash", (i, c) => executeSmash(i, c));
 commandMap.set("blow", (i, c) => executeBlow(i, c));
 commandMap.set("ban", (i) => ban.execute(i));
+commandMap.set("unban", (i) => unban.execute(i));
 commandMap.set("kick", (i) => kick.execute(i));
 commandMap.set("warn", (i) => warn.execute(i));
 commandMap.set("timeout", (i) => timeout.execute(i));
