@@ -21,16 +21,16 @@ export async function execute(interaction: CommandInteraction) {
 
   const prompt = (interaction.options as any).getString("prompt", true);
   const userId = interaction.user.id;
-  const guildId = interaction.guildId ?? "DM";
   const isOwner = userId === OWNER_ID;
+  const memoryKey = isOwner ? "GLOBAL" : (interaction.guildId ?? "DM");
 
   const rel = isOwner
     ? { affinity: 100, annoyance: 0, enemy: false }
     : await getRelation(userId, interaction.user.username);
 
   const [history, summaryRecord] = await Promise.all([
-    getConversationHistory(guildId, userId),
-    getConversationSummaryRecord(guildId, userId),
+    getConversationHistory(memoryKey, userId),
+    getConversationSummaryRecord(memoryKey, userId),
   ]);
 
   const response = await askLilith(prompt, {
@@ -50,5 +50,5 @@ export async function execute(interaction: CommandInteraction) {
   }
 
   await interaction.editReply(`**Task Mode**\n${response}`);
-  await saveConversationTurn(guildId, userId, prompt, response).catch(() => {});
+  await saveConversationTurn(memoryKey, userId, prompt, response).catch(() => {});
 }

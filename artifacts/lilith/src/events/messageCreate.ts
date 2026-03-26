@@ -149,8 +149,8 @@ export async function handleMessageCreate(message: Message, client: Client) {
     try {
       await message.channel.sendTyping();
       const [history, summaryRecord] = await Promise.all([
-        getConversationHistory("DM", OWNER_ID),
-        getConversationSummaryRecord("DM", OWNER_ID),
+        getConversationHistory("GLOBAL", OWNER_ID),
+        getConversationSummaryRecord("GLOBAL", OWNER_ID),
       ]);
       const rawResponse = dmNsfwEnabled
         ? await askLilithNsfw(raw, {
@@ -169,16 +169,16 @@ export async function handleMessageCreate(message: Message, client: Client) {
       // Strip leading/trailing whitespace and ensure Discord won't choke on it
       const response = rawResponse.trim() || "...";
       await message.reply(response.slice(0, 1999));
-      await saveConversationTurn("DM", OWNER_ID, raw, response);
+      await saveConversationTurn("GLOBAL", OWNER_ID, raw, response);
 
       (async () => {
         try {
-          const toSummarize = await getMessagesToSummarize("DM", OWNER_ID);
+          const toSummarize = await getMessagesToSummarize("GLOBAL", OWNER_ID);
           if (!toSummarize || toSummarize.length === 0) return;
           const existing = summaryRecord?.summary ?? null;
           const newSummary = await summarizeConversation(existing, toSummarize);
           const totalCovered = (summaryRecord?.messages_covered ?? 0) + toSummarize.length;
-          await saveConversationSummary("DM", OWNER_ID, newSummary, totalCovered);
+          await saveConversationSummary("GLOBAL", OWNER_ID, newSummary, totalCovered);
           await deleteMessagesByIds(toSummarize.map((m) => m.id));
         } catch {}
       })();
@@ -363,9 +363,10 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
     try {
       await message.channel.sendTyping();
+      const memoryKey = isOwner ? "GLOBAL" : message.guild.id;
       const [history, summaryRecord] = await Promise.all([
-        getConversationHistory(message.guild.id, userId),
-        getConversationSummaryRecord(message.guild.id, userId),
+        getConversationHistory(memoryKey, userId),
+        getConversationSummaryRecord(memoryKey, userId),
       ]);
       const response = await askLilith(query, {
         userId,
@@ -379,17 +380,17 @@ export async function handleMessageCreate(message: Message, client: Client) {
         memorySummary: summaryRecord?.summary ?? null,
       });
       await message.reply(response);
-      await saveConversationTurn(message.guild.id, userId, query, response);
+      await saveConversationTurn(memoryKey, userId, query, response);
 
       // Fire-and-forget: compress old messages into rolling summary
       (async () => {
         try {
-          const toSummarize = await getMessagesToSummarize(message.guild.id, userId);
+          const toSummarize = await getMessagesToSummarize(memoryKey, userId);
           if (!toSummarize || toSummarize.length === 0) return;
           const existing = summaryRecord?.summary ?? null;
           const newSummary = await summarizeConversation(existing, toSummarize);
           const totalCovered = (summaryRecord?.messages_covered ?? 0) + toSummarize.length;
-          await saveConversationSummary(message.guild.id, userId, newSummary, totalCovered);
+          await saveConversationSummary(memoryKey, userId, newSummary, totalCovered);
           await deleteMessagesByIds(toSummarize.map((m) => m.id));
         } catch {}
       })();
