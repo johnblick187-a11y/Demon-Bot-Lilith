@@ -8,9 +8,6 @@ import {
   updateRelation,
   getGuildPrefix,
   getGuildUserPrefix,
-  getCustomCommands,
-  canUseCustomCommandToday,
-  recordCustomCommandUsage,
   getChatEnabled,
   getUserAutoreacts,
   getUserAutoreplies,
@@ -320,12 +317,11 @@ export async function handleMessageCreate(message: Message, client: Client) {
     })();
   }
 
-  const [reacts, replies, guildPrefix, userPrefix, allCommands, userEmojis, userReplies] = await Promise.all([
+  const [reacts, replies, guildPrefix, userPrefix, userEmojis, userReplies] = await Promise.all([
     getAutoreacts(message.guild.id),
     getAutoreplies(message.guild.id),
     getGuildPrefix(message.guild.id),
     getGuildUserPrefix(message.guild.id, userId),
-    getCustomCommands(message.guild.id),
     getUserAutoreacts(message.guild.id, userId),
     getUserAutoreplies(message.guild.id, userId),
   ]);
@@ -588,60 +584,6 @@ export async function handleMessageCreate(message: Message, client: Client) {
         return;
       }
     }
-  }
-
-  for (const cmd of allCommands) {
-    const triggerPrefix = cmd.locked_prefix ?? effectivePrefix;
-    if (!content.startsWith(triggerPrefix)) continue;
-
-    const withoutPrefix = content.slice(triggerPrefix.length).trim();
-    const parts = withoutPrefix.split(/\s+/);
-    const commandName = parts[0]?.toLowerCase();
-    if (commandName !== cmd.command_name) continue;
-
-    if (cmd.daily_limit) {
-      const allowed = await canUseCustomCommandToday(message.guild.id, userId, cmd.command_name);
-      if (!allowed) {
-        await message.reply(
-          `You've already used \`${triggerPrefix}${cmd.command_name}\` twice this month. Come back next month.`
-        );
-        return;
-      }
-      await recordCustomCommandUsage(message.guild.id, userId, cmd.command_name);
-    }
-
-    // Resolve {user} placeholder — first @mention in the message, else author
-    const mentionMatch = message.content.match(/<@!?(\d+)>/);
-    const mentionedUser = mentionMatch
-      ? (await message.guild!.members.fetch(mentionMatch[1]).catch(() => null))
-      : null;
-    const userStr = mentionedUser
-      ? `<@${mentionedUser.id}>`
-      : `**${message.author.displayName ?? message.author.username}**`;
-
-    const resolvedContent = (cmd.effect ?? "").replace(/\{user\}/gi, userStr);
-    const effectType = cmd.effect_type ?? "text";
-
-    if (effectType === "action") {
-      await message.channel.send(`*${resolvedContent}*`);
-      return;
-    }
-
-    if (effectType === "embed") {
-      const embed = new EmbedBuilder().setDescription(resolvedContent).setColor(
-        cmd.embed_color ? (parseInt(cmd.embed_color) as any) : 0x8b0000
-      );
-      if (cmd.embed_title) embed.setTitle(cmd.embed_title);
-      if (cmd.image_url) embed.setImage(cmd.image_url);
-      await message.channel.send({ embeds: [embed] });
-      return;
-    }
-
-    // text (default)
-    const payload: any = { content: resolvedContent };
-    if (cmd.image_url) payload.files = [cmd.image_url];
-    await message.reply(payload);
-    return;
   }
 
   if (content.trim().length < 8) return;

@@ -13,8 +13,7 @@ function rageScore(affinity: number, annoyance: number): number {
 }
 
 function modeIcon(mode: LilithMode): string {
-  if (mode === "chaos") return "🔥";
-  return "😑";
+  return mode === "chaos" ? "🔥" : "😑";
 }
 
 export async function execute(interaction: CommandInteraction) {
@@ -28,10 +27,8 @@ export async function execute(interaction: CommandInteraction) {
 
   const forced = getForcedPersonality();
   const forcedDisplay = forced === "chaos"
-    ? "🔥 CHAOS — Forced"
-    : forced === "angry"
-    ? "😤 ANGRY — Forced"
-    : "✅ Natural (affinity/annoyance driven)";
+    ? "🔥 CHAOS — Forced globally"
+    : "✅ Natural — driven by affinity/annoyance";
 
   const hour = new Date().getHours();
   const timeFactor = Math.round(Math.sin((hour / 24) * Math.PI * 2) * 8);
@@ -40,22 +37,23 @@ export async function execute(interaction: CommandInteraction) {
   const moodBar = "🟪".repeat(Math.round(moodIndex / 10)) + "⬛".repeat(10 - Math.round(moodIndex / 10));
 
   const chaosCount = users.filter(u => computeMode(u.affinity, u.annoyance, u.enemy) === "chaos").length;
-  const angryCount = users.filter(u => computeMode(u.affinity, u.annoyance, u.enemy) === "angry").length;
   const defaultCount = users.filter(u => computeMode(u.affinity, u.annoyance, u.enemy) === "default").length;
 
-  const topUsers = users.slice(0, 8);
+  const topUsers = [...users]
+    .sort((a, b) => rageScore(b.affinity, b.annoyance) - rageScore(a.affinity, a.annoyance))
+    .slice(0, 8);
+
   const userLines = topUsers.map(u => {
     const rage = rageScore(u.affinity, u.annoyance);
     const mode = computeMode(u.affinity, u.annoyance, u.enemy);
     const tag = u.enemy ? " 🩸" : u.blacklisted ? " 🚫" : "";
-    return `${modeIcon(mode)} **${u.username}**${tag} — rage \`${rage}\` | aff \`${u.affinity > 0 ? "+" : ""}${u.affinity}\` ann \`${u.annoyance}\``;
+    return `${modeIcon(mode)} **${u.username || u.user_id}**${tag} — rage \`${rage}\` | aff \`${u.affinity > 0 ? "+" : ""}${u.affinity}\` ann \`${u.annoyance}\``;
   });
 
   const embed = new EmbedBuilder()
     .setTitle("🧠 Lilith — Mental State Dashboard")
     .setColor(
       forced === "chaos" ? 0x8b0000
-      : forced === "angry" ? 0xff4500
       : moodIndex < 30 ? 0x8b0000
       : moodIndex < 60 ? 0xff4500
       : 0x6a0dad
@@ -73,7 +71,7 @@ export async function execute(interaction: CommandInteraction) {
       },
       {
         name: "Mode Distribution",
-        value: `🔥 Chaos: **${chaosCount}** | 😤 Angry: **${angryCount}** | 😑 Default: **${defaultCount}**`,
+        value: `🔥 Chaos: **${chaosCount}** | 😑 Default: **${defaultCount}**`,
         inline: false,
       },
       {
@@ -82,7 +80,7 @@ export async function execute(interaction: CommandInteraction) {
         inline: false,
       }
     )
-    .setFooter({ text: "Rage = annoyance×0.7 + (−affinity)×0.3 | 40+ Angry | 70+ Chaos" })
+    .setFooter({ text: "Rage = annoyance×0.7 + (−affinity)×0.3 | 69+ = Chaos" })
     .setTimestamp();
 
   await interaction.editReply({ embeds: [embed] });
