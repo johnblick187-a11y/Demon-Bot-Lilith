@@ -11,6 +11,8 @@ import { handleMessageCreate } from "./events/messageCreate.js";
 import { handleInteractionCreate } from "./events/interactionCreate.js";
 import { registerLoggingEvents } from "./events/logging.js";
 import { handleReactionAdd, handleReactionRemove } from "./events/reactionRoles.js";
+import { handleGuildMemberAdd, handleGuildMemberRemove } from "./events/memberEvents.js";
+import { cacheAllGuilds, updateCacheOnInviteCreate, updateCacheOnInviteDelete } from "./lib/inviteCache.js";
 
 import * as status from "./commands/core/status.js";
 import * as diagnostics from "./commands/core/diagnostics.js";
@@ -65,6 +67,7 @@ import * as automod from "./commands/moderation/automod.js";
 import * as webhook from "./commands/moderation/webhook.js";
 import * as reactionrole from "./commands/moderation/reactionrole.js";
 import * as levelconfig from "./commands/moderation/levelconfig.js";
+import * as invites from "./commands/moderation/invites.js";
 import * as rank from "./commands/fun/rank.js";
 import * as leaderboard from "./commands/fun/leaderboard.js";
 import * as autoreact from "./commands/moderation/autoreact.js";
@@ -116,6 +119,7 @@ const client = new Client({
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildEmojisAndStickers,
     GatewayIntentBits.GuildModeration,
+    GatewayIntentBits.GuildInvites,
   ],
 });
 
@@ -163,6 +167,7 @@ const allCommandDefs: any[] = [
   webhook.data,
   reactionrole.data,
   levelconfig.data,
+  invites.data,
   rank.data,
   leaderboard.data,
   autoreact.data,
@@ -235,6 +240,7 @@ commandMap.set("automod", (i) => automod.execute(i));
 commandMap.set("webhook", (i) => webhook.execute(i));
 commandMap.set("reactionrole", (i) => reactionrole.execute(i));
 commandMap.set("levelconfig", (i) => levelconfig.execute(i));
+commandMap.set("invites", (i) => invites.execute(i));
 commandMap.set("rank", (i) => rank.execute(i));
 commandMap.set("leaderboard", (i) => leaderboard.execute(i));
 commandMap.set("autoreact", (i) => autoreact.execute(i));
@@ -293,6 +299,12 @@ client.on("interactionCreate", (interaction) =>
 client.on("messageReactionAdd", (reaction, user) => handleReactionAdd(reaction, user));
 client.on("messageReactionRemove", (reaction, user) => handleReactionRemove(reaction, user));
 
+client.on("guildMemberAdd", (member) => handleGuildMemberAdd(member));
+client.on("guildMemberRemove", (member) => handleGuildMemberRemove(member as any));
+
+client.on("inviteCreate", (invite) => updateCacheOnInviteCreate(invite));
+client.on("inviteDelete", (invite) => updateCacheOnInviteDelete(invite));
+
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN!);
   const appId = (await client.application?.fetch())?.id;
@@ -332,6 +344,7 @@ async function main() {
 
   client.once("ready", async () => {
     await registerCommands();
+    await cacheAllGuilds(client.guilds.cache);
   });
 }
 

@@ -65,6 +65,16 @@ export async function initDb() {
       channel_id TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS invite_uses (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      inviter_id TEXT NOT NULL,
+      invitee_id TEXT NOT NULL,
+      invite_code TEXT NOT NULL,
+      joined_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      still_in_server BOOLEAN NOT NULL DEFAULT TRUE
+    );
+
     CREATE TABLE IF NOT EXISTS reaction_roles (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -977,6 +987,56 @@ export async function resetUserXp(guildId: string, userId: string) {
 
 export async function resetAllXp(guildId: string) {
   await pool.query(`DELETE FROM user_levels WHERE guild_id = $1`, [guildId]);
+}
+
+// ─── Invite Tracking ─────────────────────────────────────────────────────────
+
+export async function recordInviteUse(
+  guildId: string,
+  inviterId: string,
+  inviteeId: string,
+  code: string
+) {
+  await pool.query(
+    `INSERT INTO invite_uses (guild_id, inviter_id, invitee_id, invite_code)
+     VALUES ($1, $2, $3, $4)`,
+    [guildId, inviterId, inviteeId, code]
+  );
+}
+
+export async function markMemberLeft(guildId: string, inviteeId: string) {
+  await pool.query(
+    `UPDATE invite_uses SET still_in_server = FALSE
+     WHERE guild_id = $1 AND invitee_id = $2 AND still_in_server = TRUE`,
+    [guildId, inviteeId]
+  );
+}
+
+export async function getInviteStats(guildId: string, userId: string) {
+  const res = await pool.query(
+    `SELECT
+       COUNT(*) FILTER (WHERE inviter_id = $2) AS total,
+       COUNT(*) FILTER (WHERE inviter_id = $2 AND still_in_server = FALSE) AS left
+     FROM invite_uses WHERE guild_id = $1`,
+    [guildId, userId]
+  );
+  return { total: parseInt(res.rows[0].total), left: parseInt(res.rows[0].left) };
+}
+
+export async function getInviteLeaderboard(guildId: string, limit: number) {
+  const res = await pool.query(
+    `SELECT
+       inviter_id,
+       COUNT(*) AS total,
+       COUNT(*) FILTER (WHERE still_in_server = FALSE) AS left
+     FROM invite_uses
+     WHERE guild_id = $1
+     GROUP BY inviter_id
+     ORDER BY total DESC
+     LIMIT $2`,
+    [guildId, limit]
+  );
+  return res.rows;
 }
 
 // ─── Reaction Roles ──────────────────────────────────────────────────────────
