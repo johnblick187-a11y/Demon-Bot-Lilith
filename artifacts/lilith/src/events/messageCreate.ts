@@ -25,6 +25,7 @@ import {
   getDmNsfwEnabled,
   setDmNsfwEnabled,
   getLilithMoodData,
+  getPersonalityFloor,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";
 import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS } from "../lib/ai.js";
@@ -468,7 +469,12 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
   if (rel.blacklisted) return;
 
-  const mode = computeMode(rel.affinity, rel.annoyance, (rel as any).enemy ?? false);
+  const computedMode = computeMode(rel.affinity, rel.annoyance, (rel as any).enemy ?? false);
+  const personalityFloor = await getPersonalityFloor(message.guild.id);
+  const MODE_LADDER = ["default", "angry", "chaos"] as const;
+  const floorIdx = personalityFloor ? MODE_LADDER.indexOf(personalityFloor as any) : 0;
+  const computedIdx = MODE_LADDER.indexOf(computedMode);
+  const mode = MODE_LADDER[Math.max(floorIdx, computedIdx)];
   const chanceByMode: Record<string, number> = { default: 0.12, angry: 0.55, chaos: 0.75 };
   const chance = chanceByMode[mode] ?? 0.30;
 
