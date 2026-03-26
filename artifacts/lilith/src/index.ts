@@ -68,6 +68,7 @@ import * as webhook from "./commands/moderation/webhook.js";
 import * as reactionrole from "./commands/moderation/reactionrole.js";
 import * as levelconfig from "./commands/moderation/levelconfig.js";
 import * as invites from "./commands/moderation/invites.js";
+import * as massnick from "./commands/moderation/massnick.js";
 import * as serverbackup from "./commands/moderation/serverbackup.js";
 import * as rank from "./commands/fun/rank.js";
 import * as leaderboard from "./commands/fun/leaderboard.js";
@@ -169,6 +170,7 @@ const allCommandDefs: any[] = [
   reactionrole.data,
   levelconfig.data,
   invites.data,
+  massnick.data,
   serverbackup.data,
   rank.data,
   leaderboard.data,
@@ -243,6 +245,7 @@ commandMap.set("webhook", (i) => webhook.execute(i));
 commandMap.set("reactionrole", (i) => reactionrole.execute(i));
 commandMap.set("levelconfig", (i) => levelconfig.execute(i));
 commandMap.set("invites", (i) => invites.execute(i));
+commandMap.set("massnick", (i) => massnick.execute(i));
 commandMap.set("serverbackup", (i) => serverbackup.execute(i));
 commandMap.set("rank", (i) => rank.execute(i));
 commandMap.set("leaderboard", (i) => leaderboard.execute(i));
