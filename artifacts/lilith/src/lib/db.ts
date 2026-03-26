@@ -314,6 +314,14 @@ export async function getAutoreplies(guildId: string) {
   return res.rows as { id: number; guild_id: string; trigger: string; reply: string }[];
 }
 
+export async function removeAutoreply(guildId: string, trigger: string): Promise<boolean> {
+  const res = await pool.query(
+    `DELETE FROM autoreplies WHERE guild_id=$1 AND trigger=$2`,
+    [guildId, trigger.toLowerCase()]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
 export async function addWarning(guildId: string, userId: string, reason: string) {
   await pool.query(
     `INSERT INTO warnings (guild_id, user_id, reason) VALUES ($1, $2, $3)`,
