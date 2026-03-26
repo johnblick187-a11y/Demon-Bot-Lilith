@@ -8,7 +8,7 @@ const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const OR_MODEL = "nousresearch/hermes-3-llama-3.1-70b";
+const OR_MODEL = "anthracite-org/magnum-v4-72b";
 const OR_NSFW_MODEL = "mancer/weaver";
 
 export type LilithMode = "default" | "angry" | "chaos";
