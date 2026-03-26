@@ -14,7 +14,7 @@ export async function execute(interaction: CommandInteraction) {
   const connection = getVoiceConnection(interaction.guildId);
 
   if (!connection) {
-    return interaction.reply({ content: "I'm not in a voice channel.", ephemeral: true });
+    return interaction.reply({ content: "I'm not in a voice channel.", flags: 64 });
   }
 
   connection.destroy();

@@ -49,7 +49,7 @@ export async function execute(interaction: CommandInteraction) {
     return interaction.reply({ content: "No.", flags: 64 });
   }
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
 
   const targetName = ((interaction.options as any).getString("name") as string | null)?.toLowerCase();
   const serverQuery = (interaction.options as any).getString("server", true) as string;
@@ -180,6 +180,6 @@ export async function execute(interaction: CommandInteraction) {
   const chunks = summary.match(/.{1,1900}/gs) ?? [summary];
   await interaction.editReply(chunks[0]);
   for (let i = 1; i < chunks.length; i++) {
-    await interaction.followUp({ content: chunks[i], ephemeral: true });
+    await interaction.followUp({ content: chunks[i], flags: 64 });
   }
 }

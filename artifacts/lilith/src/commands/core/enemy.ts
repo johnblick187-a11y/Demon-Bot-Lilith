@@ -29,7 +29,7 @@ export async function execute(interaction: CommandInteraction) {
   if (interaction.user.id !== OWNER_ID) {
     return interaction.reply({
       content: "This command is mine alone. You don't get to touch it.",
-      ephemeral: true,
+      flags: 64,
     });
   }
 
@@ -39,7 +39,7 @@ export async function execute(interaction: CommandInteraction) {
     const target = (interaction.options as any).getUser("user", true);
 
     if (target.id === OWNER_ID) {
-      return interaction.reply({ content: "You can't enemy yourself.", ephemeral: true });
+      return interaction.reply({ content: "You can't enemy yourself.", flags: 64 });
     }
 
     await getRelation(target.id, target.username);

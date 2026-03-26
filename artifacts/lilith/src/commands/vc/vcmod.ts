@@ -18,7 +18,7 @@ export async function executeVcmove(interaction: CommandInteraction) {
   const dest = (interaction.options as any).getChannel("destination", true);
   const member = interaction.guild?.members.cache.get(target.id);
 
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.reply({ content: "User not found.", flags: 64 });
   await member.voice.setChannel(dest.id);
   await interaction.reply(`🔀 Moved **${target.username}** to **${dest.name}**.`);
 }
@@ -32,7 +32,7 @@ export const vcmuteData = new SlashCommandBuilder()
 export async function executeVcmute(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
   const member = interaction.guild?.members.cache.get(target.id);
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.reply({ content: "User not found.", flags: 64 });
   await member.voice.setMute(true);
   await interaction.reply(`🔇 **${target.username}** has been muted.`);
 }
@@ -46,7 +46,7 @@ export const vcunmuteData = new SlashCommandBuilder()
 export async function executeVcunmute(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
   const member = interaction.guild?.members.cache.get(target.id);
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.reply({ content: "User not found.", flags: 64 });
   await member.voice.setMute(false);
   await interaction.reply(`🔊 **${target.username}** has been unmuted.`);
 }
@@ -60,7 +60,7 @@ export const vcdeafenData = new SlashCommandBuilder()
 export async function executeVcdeafen(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
   const member = interaction.guild?.members.cache.get(target.id);
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.reply({ content: "User not found.", flags: 64 });
   await member.voice.setDeaf(true);
   await interaction.reply(`🙉 **${target.username}** has been deafened.`);
 }
@@ -74,7 +74,7 @@ export const vcundeafenData = new SlashCommandBuilder()
 export async function executeVcundeafen(interaction: CommandInteraction) {
   const target = (interaction.options as any).getUser("user", true);
   const member = interaction.guild?.members.cache.get(target.id);
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.reply({ content: "User not found.", flags: 64 });
   await member.voice.setDeaf(false);
   await interaction.reply(`👂 **${target.username}** has been undeafened.`);
 }

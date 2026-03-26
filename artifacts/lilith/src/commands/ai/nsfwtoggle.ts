@@ -27,7 +27,7 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function execute(interaction: CommandInteraction) {
-  if (!interaction.guild) return interaction.reply({ content: "Guild only.", ephemeral: true });
+  if (!interaction.guild) return interaction.reply({ content: "Guild only.", flags: 64 });
 
   const scope = (interaction.options as any).getString("scope", true);
   const guildId = interaction.guild.id;
@@ -40,17 +40,17 @@ export async function execute(interaction: CommandInteraction) {
       content: newState
         ? "NSFW enabled for this server. Don't say I didn't warn you."
         : "NSFW disabled server-wide. How boring.",
-      ephemeral: true,
+      flags: 64,
     });
   } else {
     const channelId = interaction.channelId;
     const isEnabled = settings.nsfw_channels?.includes(channelId);
     if (isEnabled) {
       await removeNsfwChannel(guildId, channelId);
-      await interaction.reply({ content: "NSFW disabled for this channel.", ephemeral: true });
+      await interaction.reply({ content: "NSFW disabled for this channel.", flags: 64 });
     } else {
       await addNsfwChannel(guildId, channelId);
-      await interaction.reply({ content: "NSFW enabled for this channel. Fine.", ephemeral: true });
+      await interaction.reply({ content: "NSFW enabled for this channel. Fine.", flags: 64 });
     }
   }
 }

@@ -2,35 +2,46 @@ import { SlashCommandBuilder, EmbedBuilder, CommandInteraction } from "discord.j
 
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Command list");
+  .setDescription("Full command list");
 
 const COMMAND_LIST = `
 **👑 Owner Only**
-\`/diagnostics\` \`/unblacklist\` \`/override\`
+\`/diagnostics\` \`/override\` \`/unblacklist\` \`/memory\` \`/dm\`
+\`/stealemoji\` \`/stealsticker\` \`/stealsound\`
+\`/serverbackup\`
 
 **⚙️ Core**
-\`/status\` \`/help\` \`/mood\` \`/annoyance\` \`/affinity\` \`/enemy\` \`/changeprefix\`
+\`/status\` \`/help\` \`/mood\` \`/annoyance\` \`/affinity\`
+\`/enemy\` \`/prefix\` \`/create command\`
 
 **🧠 AI**
-\`/ask\` \`/task\` \`/tldr\` \`/google\` \`/nsfwtoggle\` \`/chattoggle\`
+\`/ask\` \`/task\` \`/tldr\` \`/google\`
+\`/nsfwtoggle\` \`/chattoggle\`
 
-**😈 Interaction**
-\`/punch\` \`/slap\` \`/bite\` \`/headbutt\` \`/stab\` \`/shoot\` \`/roast\` \`/pickup\` \`/ship\` \`/smash\` \`/blow\`
+**💀 Interaction**
+\`/punch\` \`/slap\` \`/bite\` \`/headbutt\` \`/stab\` \`/shoot\`
+\`/roast\` \`/pickup\` \`/ship\` \`/smash\` \`/blow\`
 
 **🚨 Moderation**
-\`/ban\` \`/unban\` \`/kick\` \`/warn\` \`/timeout\` \`/purge\` \`/dm\`
-\`/channel\` \`/rename\` \`/makerole\` \`/editrole\` \`/deleterole\`
-\`/autoreact\` \`/autoreply\` \`/setlogchannel\`
-\`/stealemoji\` \`/stealsticker\` \`/avatar\` \`/banner\` \`/info\`
+\`/ban\` \`/unban\` \`/kick\` \`/warn\` \`/timeout\` \`/purge\`
+\`/rename\` \`/makerole\` \`/editrole\` \`/deleterole\` \`/giverole\` \`/removerole\`
+\`/channel\` \`/setlogchannel\`
+\`/automod\` \`/autoreact\` \`/autoreply\` \`/userreact\` \`/userreply\`
+\`/reactionrole\` \`/webhook\` \`/invites\`
+\`/avatar\` \`/banner\` \`/info\`
+
+**📈 Leveling**
+\`/rank\` \`/leaderboard\` \`/levelconfig\`
 
 **🌿 Fun**
 \`/hitsmeth\` \`/hitsweed\` \`/chugsdrink\` \`/popspill\`
 
 **🎨 Generation**
-\`/create\` \`/generate\` \`/tts\`
+\`/create image\` \`/generate\` \`/tts\`
 
 **🎧 Voice & Music**
-\`/join\` \`/leave\` \`/play\` \`/pause\` \`/resume\` \`/skip\` \`/stop\` \`/queue\`
+\`/join\` \`/leave\`
+\`/play\` \`/pause\` \`/resume\` \`/skip\` \`/stop\` \`/queue\`
 \`/vcmove\` \`/vcmute\` \`/vcunmute\` \`/vcdeafen\` \`/vcundeafen\`
 `;
 

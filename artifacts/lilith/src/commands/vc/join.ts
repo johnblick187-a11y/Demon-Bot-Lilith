@@ -15,7 +15,7 @@ export async function execute(interaction: CommandInteraction) {
   const vc = member.voice.channel;
 
   if (!vc) {
-    return interaction.reply({ content: "Get in a voice channel first.", ephemeral: true });
+    return interaction.reply({ content: "Get in a voice channel first.", flags: 64 });
   }
 
   await interaction.deferReply();

@@ -38,7 +38,7 @@ export async function executeEditrole(interaction: CommandInteraction) {
   const color = (interaction.options as any).getString("color");
 
   const guildRole = interaction.guild?.roles.cache.get(role.id);
-  if (!guildRole) return interaction.reply({ content: "Role not found.", ephemeral: true });
+  if (!guildRole) return interaction.reply({ content: "Role not found.", flags: 64 });
 
   await guildRole.edit({
     name: name ?? guildRole.name,
@@ -57,7 +57,7 @@ export const deleteroleData = new SlashCommandBuilder()
 export async function executeDeleterole(interaction: CommandInteraction) {
   const role = (interaction.options as any).getRole("role", true) as Role;
   const guildRole = interaction.guild?.roles.cache.get(role.id);
-  if (!guildRole) return interaction.reply({ content: "Role not found.", ephemeral: true });
+  if (!guildRole) return interaction.reply({ content: "Role not found.", flags: 64 });
 
   const name = guildRole.name;
   await guildRole.delete();

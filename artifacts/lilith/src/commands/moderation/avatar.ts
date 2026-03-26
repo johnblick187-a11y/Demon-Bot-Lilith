@@ -25,7 +25,7 @@ export async function executeBanner(interaction: CommandInteraction) {
   const bannerUrl = fetched.bannerURL({ size: 512 });
 
   if (!bannerUrl) {
-    return interaction.reply({ content: `**${target.username}** has no banner. Tragic.`, ephemeral: true });
+    return interaction.reply({ content: `**${target.username}** has no banner. Tragic.`, flags: 64 });
   }
 
   const embed = new EmbedBuilder()

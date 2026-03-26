@@ -63,7 +63,7 @@ export async function execute(interaction: CommandInteraction) {
 
   if (type === "role") {
     const role = (interaction.options as any).getRole("role") as Role;
-    if (!role) return interaction.reply({ content: "Provide a role.", ephemeral: true });
+    if (!role) return interaction.reply({ content: "Provide a role.", flags: 64 });
 
     const embed = new EmbedBuilder()
       .setTitle(`🎭 ${role.name}`)

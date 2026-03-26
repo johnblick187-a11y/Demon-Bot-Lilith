@@ -120,7 +120,7 @@ async function handleNsfwOnLilith(
     if (inDM) return false;
     await interaction.reply({
       content: `Not here. You know where.`,
-      ephemeral: true,
+      flags: 64,
     });
     return true;
   }

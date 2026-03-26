@@ -29,7 +29,7 @@ export const data = new SlashCommandBuilder()
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) {
-    return interaction.reply({ content: "This command is server-only.", ephemeral: true });
+    return interaction.reply({ content: "This command is server-only.", flags: 64 });
   }
 
   const targetUser = (interaction.options as any).getUser("user") as {
@@ -40,7 +40,7 @@ export async function execute(interaction: CommandInteraction) {
   const newPrefix = (interaction.options as any).getString("new_prefix") as string | null;
 
   if (newPrefix && /\s/.test(newPrefix)) {
-    return interaction.reply({ content: "Prefix cannot contain spaces.", ephemeral: true });
+    return interaction.reply({ content: "Prefix cannot contain spaces.", flags: 64 });
   }
 
   const isSelf = targetUser.id === interaction.user.id;
@@ -49,7 +49,7 @@ export async function execute(interaction: CommandInteraction) {
     if (!member?.permissions.has(PermissionFlagsBits.ManageGuild)) {
       return interaction.reply({
         content: "You need Manage Server permission to change someone else's prefix.",
-        ephemeral: true,
+        flags: 64,
       });
     }
   }
@@ -73,7 +73,7 @@ export async function execute(interaction: CommandInteraction) {
     const who = isSelf ? "Your" : `**${displayName}**'s`;
     return interaction.reply({
       content: `${who} current prefix is \`${effective}\` *(${source})*.`,
-      ephemeral: true,
+      flags: 64,
     });
   }
 }

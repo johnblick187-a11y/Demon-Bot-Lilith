@@ -29,14 +29,14 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   const channel = interaction.channel as TextChannel;
   if (!channel || typeof channel.messages?.fetch !== "function") {
-    return interaction.reply({ content: "Can't purge this channel.", ephemeral: true });
+    return interaction.reply({ content: "Can't purge this channel.", flags: 64 });
   }
 
   const isOwner = interaction.user.id === OWNER_ID;
   const rawLimit = (interaction.options as any).getInteger("count") as number | null;
   const limit = !isOwner ? Math.min(rawLimit ?? 1000, 1000) : rawLimit;
 
-  await interaction.deferReply({ ephemeral: true });
+  await interaction.deferReply({ flags: 64 });
 
   const label = limit ? `${limit.toLocaleString()} messages` : "all messages";
   await interaction.editReply(`🔥 Purging ${label}… stand back.`);

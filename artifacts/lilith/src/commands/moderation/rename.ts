@@ -8,13 +8,16 @@ export const data = new SlashCommandBuilder()
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageNicknames);
 
 export async function execute(interaction: CommandInteraction) {
+  if (!interaction.guild) return;
+  await interaction.deferReply();
+
   const target = (interaction.options as any).getUser("user", true);
   const newName = (interaction.options as any).getString("name", true);
-  const member = interaction.guild?.members.cache.get(target.id);
+  const member = await interaction.guild.members.fetch(target.id).catch(() => null);
 
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.editReply("User not found.");
 
   const old = member.displayName;
   await member.setNickname(newName);
-  await interaction.reply(`✏️ Renamed **${old}** → **${newName}**.`);
+  await interaction.editReply(`✏️ Renamed **${old}** → **${newName}**.`);
 }

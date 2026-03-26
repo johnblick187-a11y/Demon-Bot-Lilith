@@ -70,7 +70,7 @@ export async function executePlay(interaction: CommandInteraction) {
 export const pauseData = new SlashCommandBuilder().setName("pause").setDescription("Pause playback");
 export async function executePause(interaction: CommandInteraction) {
   const state = getMusicState(interaction.guildId!);
-  if (!state) return interaction.reply({ content: "Nothing is playing.", ephemeral: true });
+  if (!state) return interaction.reply({ content: "Nothing is playing.", flags: 64 });
   state.player.pause();
   await interaction.reply("⏸️ Paused.");
 }
@@ -78,7 +78,7 @@ export async function executePause(interaction: CommandInteraction) {
 export const resumeData = new SlashCommandBuilder().setName("resume").setDescription("Resume playback");
 export async function executeResume(interaction: CommandInteraction) {
   const state = getMusicState(interaction.guildId!);
-  if (!state) return interaction.reply({ content: "Nothing to resume.", ephemeral: true });
+  if (!state) return interaction.reply({ content: "Nothing to resume.", flags: 64 });
   state.player.unpause();
   await interaction.reply("▶️ Resumed.");
 }
@@ -86,7 +86,7 @@ export async function executeResume(interaction: CommandInteraction) {
 export const skipData = new SlashCommandBuilder().setName("skip").setDescription("Skip the current song");
 export async function executeSkip(interaction: CommandInteraction) {
   const state = getMusicState(interaction.guildId!);
-  if (!state) return interaction.reply({ content: "Nothing to skip.", ephemeral: true });
+  if (!state) return interaction.reply({ content: "Nothing to skip.", flags: 64 });
   const hasNext = await playNext(interaction.guildId!);
   await interaction.reply(hasNext ? "⏭️ Skipped." : "⏭️ Skipped. Queue is empty.");
 }
@@ -94,7 +94,7 @@ export async function executeSkip(interaction: CommandInteraction) {
 export const stopData = new SlashCommandBuilder().setName("stop").setDescription("Stop playback and clear queue");
 export async function executeStop(interaction: CommandInteraction) {
   const state = getMusicState(interaction.guildId!);
-  if (!state) return interaction.reply({ content: "Nothing playing.", ephemeral: true });
+  if (!state) return interaction.reply({ content: "Nothing playing.", flags: 64 });
   state.queue.length = 0;
   state.player.stop();
   state.currentSong = null;
@@ -105,7 +105,7 @@ export const queueData = new SlashCommandBuilder().setName("queue").setDescripti
 export async function executeQueue(interaction: CommandInteraction) {
   const state = getMusicState(interaction.guildId!);
   if (!state || (!state.currentSong && state.queue.length === 0)) {
-    return interaction.reply({ content: "Queue is empty.", ephemeral: true });
+    return interaction.reply({ content: "Queue is empty.", flags: 64 });
   }
 
   const embed = new EmbedBuilder()

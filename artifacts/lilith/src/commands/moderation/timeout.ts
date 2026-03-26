@@ -16,7 +16,7 @@ export async function execute(interaction: CommandInteraction) {
   const reason = (interaction.options as any).getString("reason") ?? "No reason given.";
   const member = interaction.guild?.members.cache.get(target.id);
 
-  if (!member) return interaction.reply({ content: "User not found.", ephemeral: true });
+  if (!member) return interaction.reply({ content: "User not found.", flags: 64 });
 
   const ms = minutes * 60 * 1000;
   await member.timeout(ms, reason);
