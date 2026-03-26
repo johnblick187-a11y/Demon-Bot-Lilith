@@ -152,7 +152,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
         getConversationHistory("DM", OWNER_ID),
         getConversationSummaryRecord("DM", OWNER_ID),
       ]);
-      const response = dmNsfwEnabled
+      const rawResponse = dmNsfwEnabled
         ? await askLilithNsfw(raw, {
             history,
             memorySummary: summaryRecord?.summary ?? null,
@@ -166,7 +166,9 @@ export async function handleMessageCreate(message: Message, client: Client) {
             history,
             memorySummary: summaryRecord?.summary ?? null,
           });
-      await message.reply(response);
+      // Strip leading/trailing whitespace and ensure Discord won't choke on it
+      const response = rawResponse.trim() || "...";
+      await message.reply(response.slice(0, 1999));
       await saveConversationTurn("DM", OWNER_ID, raw, response);
 
       (async () => {
@@ -180,7 +182,10 @@ export async function handleMessageCreate(message: Message, client: Client) {
           await deleteMessagesByIds(toSummarize.map((m) => m.id));
         } catch {}
       })();
-    } catch {}
+    } catch (err) {
+      console.error("[DM handler]", err);
+      try { await message.reply("Something broke on my end. Try again."); } catch {}
+    }
     return;
   }
 
