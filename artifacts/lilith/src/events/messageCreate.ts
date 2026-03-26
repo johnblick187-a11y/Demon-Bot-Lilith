@@ -422,8 +422,13 @@ export async function handleMessageCreate(message: Message, client: Client) {
   }
 
   // ── Built-in prefix music commands ──────────────────────────────────────────
-  if (effectivePrefix && content.startsWith(effectivePrefix)) {
-    const withoutPfx = content.slice(effectivePrefix.length).trim();
+  // Always respond to L! as a hardcoded music prefix, plus the server prefix
+  const LILITH_PREFIX = "L!";
+  const musicPrefix = content.startsWith(LILITH_PREFIX)
+    ? LILITH_PREFIX
+    : (effectivePrefix && content.startsWith(effectivePrefix) ? effectivePrefix : null);
+  if (musicPrefix) {
+    const withoutPfx = content.slice(musicPrefix.length).trim();
     const parts = withoutPfx.split(/\s+/);
     const cmd = parts[0]?.toLowerCase();
     const args = parts.slice(1).join(" ").trim();
