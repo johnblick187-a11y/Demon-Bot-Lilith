@@ -12,6 +12,7 @@ import { handleInteractionCreate } from "./events/interactionCreate.js";
 
 import * as status from "./commands/core/status.js";
 import * as diagnostics from "./commands/core/diagnostics.js";
+import * as unblacklist from "./commands/core/unblacklist.js";
 import * as help from "./commands/core/help.js";
 import * as mood from "./commands/core/mood.js";
 import * as annoyance from "./commands/core/annoyance.js";
@@ -106,6 +107,7 @@ const commandMap = new Map<string, (interaction: any, client: Client) => Promise
 const allCommandDefs: any[] = [
   status.data,
   diagnostics.data,
+  unblacklist.data,
   help.data,
   mood.data,
   annoyance.data,
@@ -163,6 +165,7 @@ const allCommandDefs: any[] = [
 
 commandMap.set("status", (i, c) => status.execute(i, c));
 commandMap.set("diagnostics", (i, c) => diagnostics.execute(i, c));
+commandMap.set("unblacklist", (i) => unblacklist.execute(i));
 commandMap.set("help", (i) => help.execute(i));
 commandMap.set("mood", (i) => mood.execute(i));
 commandMap.set("annoyance", (i) => annoyance.execute(i));

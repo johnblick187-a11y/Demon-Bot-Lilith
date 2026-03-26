@@ -220,6 +220,14 @@ export async function getEnemies(): Promise<{ user_id: string; username: string 
   return res.rows;
 }
 
+export async function unblacklistUser(userId: string): Promise<boolean> {
+  const res = await pool.query(
+    `UPDATE user_relations SET blacklisted=FALSE, annoyance=0, annoyance_locked=FALSE, nsfw_incident_count=0 WHERE user_id=$1`,
+    [userId]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
 export async function blacklistUser(userId: string) {
   await pool.query(
     `UPDATE user_relations SET blacklisted=TRUE, annoyance=100, annoyance_locked=TRUE WHERE user_id=$1`,
