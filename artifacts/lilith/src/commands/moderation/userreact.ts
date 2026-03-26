@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction } from "discord.js";
 import { pool } from "../../lib/db.js";
 
 export const data = new SlashCommandBuilder()
@@ -30,8 +30,7 @@ export const data = new SlashCommandBuilder()
     sub
       .setName("list")
       .setDescription("List all user auto-reacts in this server")
-  )
-  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuild);
+  );
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) return;
