@@ -128,16 +128,17 @@ async function handleNsfwOnLilith(
   const rel = await getRelation(userId, interaction.user.username);
   const incidentCount = rel.nsfw_incident_count + 1;
 
-  await interaction.reply({
-    content: `You just tried to use an NSFW command on **me**.\n\nThat was a mistake.`,
-    ephemeral: false,
-  });
+  const warningByIncident: Record<number, string> = {
+    1: `You just tried to use an NSFW command on **me**.\n\nStrike one. I remember.`,
+    2: `You did it again.\n\nStrike two. One more and you're gone from every server I'm in.`,
+  };
 
+  const warning = warningByIncident[incidentCount]
+    ?? `Strike three.\n\nYou had two warnings. You're done.`;
+
+  await interaction.reply({ content: warning, ephemeral: false });
   await updateRelation(userId, { annoyance: 50 });
-
-  const banned = await banFromAllGuilds(userId, interaction.user.username, client);
-
-  await lockAnnoyanceAndNotify(userId, incidentCount, interaction, client, banned);
+  await lockAnnoyanceAndNotify(userId, incidentCount, interaction, client);
 
   return true;
 }
@@ -147,7 +148,6 @@ async function lockAnnoyanceAndNotify(
   incidentCount: number,
   interaction: CommandInteraction,
   client: Client,
-  bannedCount: number = 0
 ) {
   const { pool } = await import("../../lib/db.js");
 
@@ -156,26 +156,32 @@ async function lockAnnoyanceAndNotify(
     [userId]
   );
 
+  // Ban + blacklist only on 3rd incident
+  let bannedCount = 0;
+  if (incidentCount >= 3) {
+    bannedCount = await banFromAllGuilds(userId, interaction.user.username, client);
+    await blacklistUser(userId);
+    await interaction.followUp({
+      content: `Banned and blacklisted. Permanently. You had your chances.`,
+      ephemeral: false,
+    });
+  }
+
   try {
     const owner = await client.users.fetch(OWNER_ID);
     const guild = interaction.guild;
+    const statusLine =
+      incidentCount === 1 ? "First offense — warned." :
+      incidentCount === 2 ? "Second offense — final warning given." :
+      `Third offense — BANNED from ${bannedCount} server${bannedCount !== 1 ? "s" : ""} and BLACKLISTED.`;
     await owner.send(
       `⚠️ **NSFW Incident — Lilith Targeted**\n` +
       `**User:** ${interaction.user.username} (${userId})\n` +
       `**Incident #${incidentCount}**\n` +
-      `**Server:** ${guild?.name ?? "DM"}\n` +
-      `**Banned from:** ${bannedCount} server${bannedCount !== 1 ? "s" : ""}\n\n` +
-      `${incidentCount >= 2 ? "Second offense — user BLACKLISTED." : "First offense."}`
+      `**Server:** ${guild?.name ?? "DM"}\n\n` +
+      statusLine
     );
   } catch {}
-
-  if (incidentCount >= 2) {
-    await blacklistUser(userId);
-    await interaction.followUp({
-      content: `Second offense. You're blacklisted. Permanently.`,
-      ephemeral: false,
-    });
-  }
 }
 
 export const smashData = new SlashCommandBuilder()

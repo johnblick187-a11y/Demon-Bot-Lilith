@@ -277,6 +277,28 @@ export async function handleMessageCreate(message: Message, client: Client) {
     try { await message.react(pick); } catch {}
   }
 
+  // If someone pings the owner, savage roast them
+  if (userId !== OWNER_ID && message.mentions.users.has(OWNER_ID)) {
+    (async () => {
+      try {
+        await message.channel.sendTyping();
+        const clean = message.content.replace(/<@!?\d+>/g, "").trim();
+        const roastPrompt = `${message.author.username} just pinged tweakbrazy in the server${clean ? `, saying: "${clean}"` : ""}. Tear them apart. Be vicious, personal, and savage — address them directly with an all-out roast. No softening. They bothered your owner.`;
+        const roast = await askLilith(roastPrompt, {
+          userId,
+          username: message.author.username,
+          affinity: -100,
+          annoyance: 100,
+          isOwner: false,
+          enemy: false,
+          mode: "chat",
+        });
+        await message.reply(roast);
+      } catch {}
+    })().catch(() => {});
+    return;
+  }
+
   for (const text of userReplies) {
     try { await message.reply(text); } catch {}
   }
