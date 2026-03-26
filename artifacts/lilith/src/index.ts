@@ -46,6 +46,7 @@ import * as warn from "./commands/moderation/warn.js";
 import * as timeout from "./commands/moderation/timeout.js";
 import * as purge from "./commands/moderation/purge.js";
 import * as setlogchannel from "./commands/moderation/setlogchannel.js";
+import * as dm from "./commands/moderation/dm.js";
 import * as rename from "./commands/moderation/rename.js";
 import {
   makeroleData,
@@ -137,6 +138,7 @@ const allCommandDefs: any[] = [
   timeout.data,
   purge.data,
   setlogchannel.data,
+  dm.data,
   rename.data,
   makeroleData,
   editroleData,
@@ -198,6 +200,7 @@ commandMap.set("warn", (i) => warn.execute(i));
 commandMap.set("timeout", (i) => timeout.execute(i));
 commandMap.set("purge", (i) => purge.execute(i));
 commandMap.set("setlogchannel", (i) => setlogchannel.execute(i));
+commandMap.set("dm", (i) => dm.execute(i));
 commandMap.set("rename", (i) => rename.execute(i));
 commandMap.set("makerole", (i) => executeMakerole(i));
 commandMap.set("editrole", (i) => executeEditrole(i));
