@@ -162,3 +162,9 @@ id = "vMbb7jnfY3GGGASQjSDyW"
 uri = "file://attached_assets/generated_images/lilith_emoji_pipe.png"
 type = "image"
 title = "Lilith Smoking Emoji"
+
+[[outputs]]
+id = "SaqjrQA081aiELdR5WowM"
+uri = "file://attached_assets/generated_images/lilith_upscaled.png"
+type = "image"
+title = "Lilith — 4K Upscaled"
