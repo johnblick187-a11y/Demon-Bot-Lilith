@@ -115,7 +115,7 @@ export async function execute(interaction: CommandInteraction) {
 
     try {
       const output = await replicate.run(
-        "meta/musicgen:671ac645ce5e552cc63a54a2bbff63fcf798043055d2dac5fc9e36a837eedcfb",
+        "meta/musicgen" as `${string}/${string}`,
         {
           input: {
             prompt: vocals ? prompt : `${prompt}, instrumental, no vocals`,
