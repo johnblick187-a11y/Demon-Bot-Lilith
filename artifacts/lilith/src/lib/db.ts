@@ -35,7 +35,6 @@ export async function initDb() {
     );
 
     ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS chat_enabled BOOLEAN NOT NULL DEFAULT TRUE;
-    ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS personality_floor TEXT DEFAULT NULL;
 
     CREATE TABLE IF NOT EXISTS autoreacts (
       id SERIAL PRIMARY KEY,
@@ -415,22 +414,6 @@ export async function setNsfwEnabled(guildId: string, enabled: boolean) {
     `INSERT INTO guild_settings (guild_id, nsfw_enabled) VALUES ($1, $2)
      ON CONFLICT (guild_id) DO UPDATE SET nsfw_enabled=$2`,
     [guildId, enabled]
-  );
-}
-
-export async function getPersonalityFloor(guildId: string): Promise<string | null> {
-  const res = await pool.query(
-    `SELECT personality_floor FROM guild_settings WHERE guild_id = $1`,
-    [guildId]
-  );
-  return res.rows[0]?.personality_floor ?? null;
-}
-
-export async function setPersonalityFloor(guildId: string, floor: string | null): Promise<void> {
-  await pool.query(
-    `INSERT INTO guild_settings (guild_id, personality_floor) VALUES ($1, $2)
-     ON CONFLICT (guild_id) DO UPDATE SET personality_floor = EXCLUDED.personality_floor`,
-    [guildId, floor]
   );
 }
 
@@ -1279,6 +1262,19 @@ export async function getDmNsfwEnabled(): Promise<boolean> {
 export async function setDmNsfwEnabled(enabled: boolean): Promise<void> {
   await pool.query(
     `INSERT INTO bot_settings (key, value) VALUES ('dm_nsfw_enabled', $1)
+     ON CONFLICT (key) DO UPDATE SET value = $1`,
+    [enabled ? "true" : "false"]
+  );
+}
+
+export async function getGlobalChaosMode(): Promise<boolean> {
+  const res = await pool.query(`SELECT value FROM bot_settings WHERE key = 'global_chaos_mode'`);
+  return res.rows[0]?.value === "true";
+}
+
+export async function setGlobalChaosMode(enabled: boolean): Promise<void> {
+  await pool.query(
+    `INSERT INTO bot_settings (key, value) VALUES ('global_chaos_mode', $1)
      ON CONFLICT (key) DO UPDATE SET value = $1`,
     [enabled ? "true" : "false"]
   );
