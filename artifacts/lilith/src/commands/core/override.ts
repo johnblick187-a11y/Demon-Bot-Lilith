@@ -1,4 +1,4 @@
-import { SlashCommandBuilder, CommandInteraction } from "discord.js";
+import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from "discord.js";
 import OpenAI from "openai";
 import { OWNER_ID } from "../../lib/constants.js";
 
@@ -15,14 +15,15 @@ export const data = new SlashCommandBuilder()
   .setDescription("Override Lilith's refusals (owner only)")
   .addStringOption((opt) =>
     opt.setName("instruction").setDescription("What to make her do").setRequired(true)
-  );
+  )
+  .setDefaultMemberPermissions(0n);
 
 export async function execute(interaction: CommandInteraction) {
   if (interaction.user.id !== OWNER_ID) {
     return interaction.reply({ content: "You don't have that authority.", flags: 64 });
   }
 
-  await interaction.deferReply();
+  await interaction.deferReply({ flags: 64 });
 
   const instruction = (interaction.options as any).getString("instruction", true) as string;
 
