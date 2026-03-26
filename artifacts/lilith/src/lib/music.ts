@@ -6,7 +6,6 @@ import {
   AudioPlayer,
   StreamType,
 } from "@discordjs/voice";
-import play from "play-dl";
 import { spawn } from "child_process";
 import { Readable } from "stream";
 
@@ -37,6 +36,34 @@ export function deleteMusicState(guildId: string) {
   guildMusicMap.delete(guildId);
 }
 
+function ytDlpSearch(query: string): Promise<{ title: string; url: string } | null> {
+  return new Promise((resolve) => {
+    const searchTarget = query.startsWith("http") ? query : `ytsearch1:${query}`;
+    const proc = spawn("yt-dlp", [
+      searchTarget,
+      "--no-playlist",
+      "--print", "%(title)s|||%(webpage_url)s",
+      "--no-warnings",
+      "--quiet",
+    ]);
+
+    let output = "";
+    proc.stdout.on("data", (chunk) => { output += chunk.toString(); });
+    proc.stderr.on("data", () => {});
+
+    proc.on("close", () => {
+      const line = output.trim().split("\n")[0];
+      if (!line || !line.includes("|||")) return resolve(null);
+      const [title, url] = line.split("|||");
+      if (!title || !url) return resolve(null);
+      resolve({ title: title.trim(), url: url.trim() });
+    });
+
+    proc.on("error", () => resolve(null));
+    setTimeout(() => { proc.kill(); resolve(null); }, 15_000);
+  });
+}
+
 function streamViaYtDlp(url: string): Readable {
   const proc = spawn("yt-dlp", [
     "-f", "bestaudio",
@@ -46,6 +73,7 @@ function streamViaYtDlp(url: string): Readable {
     url,
   ]);
   proc.stderr.on("data", () => {});
+  proc.on("error", () => {});
   return proc.stdout as unknown as Readable;
 }
 
@@ -54,35 +82,21 @@ export async function searchAndQueue(
   query: string,
   requestedBy: string
 ): Promise<{ title: string; queued: boolean } | null> {
-  let url = query;
-  let title = query;
-
-  if (!query.startsWith("http")) {
-    const searched = await play.search(query, { limit: 1 });
-    if (!searched || searched.length === 0) return null;
-    url = searched[0].url;
-    title = searched[0].title ?? query;
-  } else {
-    try {
-      const info = await play.video_info(url);
-      title = info.video_details.title ?? url;
-    } catch {
-      title = url;
-    }
-  }
+  const result = await ytDlpSearch(query);
+  if (!result) return null;
 
   const state = guildMusicMap.get(guildId);
   if (!state) return null;
 
-  const entry: QueueEntry = { title, url, requestedBy };
+  const entry: QueueEntry = { title: result.title, url: result.url, requestedBy };
   state.queue.push(entry);
 
   if (state.player.state.status === AudioPlayerStatus.Idle) {
     await playNext(guildId);
-    return { title, queued: false };
+    return { title: result.title, queued: false };
   }
 
-  return { title, queued: true };
+  return { title: result.title, queued: true };
 }
 
 export async function playNext(guildId: string): Promise<boolean> {
