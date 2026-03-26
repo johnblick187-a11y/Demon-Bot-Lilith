@@ -63,3 +63,53 @@ export async function executeDeleterole(interaction: CommandInteraction) {
   await guildRole.delete();
   await interaction.reply(`🗑️ Role **${name}** deleted.`);
 }
+
+export const giveroleData = new SlashCommandBuilder()
+  .setName("giverole")
+  .setDescription("Assign a role to a member")
+  .addUserOption((opt) => opt.setName("user").setDescription("Member to give the role to").setRequired(true))
+  .addRoleOption((opt) => opt.setName("role").setDescription("Role to assign").setRequired(true))
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
+export async function executeGiverole(interaction: CommandInteraction) {
+  const target = (interaction.options as any).getUser("user", true);
+  const role = (interaction.options as any).getRole("role", true) as Role;
+
+  const member = await interaction.guild?.members.fetch(target.id).catch(() => null);
+  if (!member) return interaction.reply({ content: "Member not found.", flags: 64 });
+
+  const guildRole = interaction.guild?.roles.cache.get(role.id);
+  if (!guildRole) return interaction.reply({ content: "Role not found.", flags: 64 });
+
+  if (member.roles.cache.has(guildRole.id)) {
+    return interaction.reply({ content: `**${member.displayName}** already has **${guildRole.name}**.`, flags: 64 });
+  }
+
+  await member.roles.add(guildRole);
+  await interaction.reply(`✅ Gave **${guildRole.name}** to **${member.displayName}**.`);
+}
+
+export const removeroleData = new SlashCommandBuilder()
+  .setName("removerole")
+  .setDescription("Remove a role from a member")
+  .addUserOption((opt) => opt.setName("user").setDescription("Member to remove the role from").setRequired(true))
+  .addRoleOption((opt) => opt.setName("role").setDescription("Role to remove").setRequired(true))
+  .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
+
+export async function executeRemoverole(interaction: CommandInteraction) {
+  const target = (interaction.options as any).getUser("user", true);
+  const role = (interaction.options as any).getRole("role", true) as Role;
+
+  const member = await interaction.guild?.members.fetch(target.id).catch(() => null);
+  if (!member) return interaction.reply({ content: "Member not found.", flags: 64 });
+
+  const guildRole = interaction.guild?.roles.cache.get(role.id);
+  if (!guildRole) return interaction.reply({ content: "Role not found.", flags: 64 });
+
+  if (!member.roles.cache.has(guildRole.id)) {
+    return interaction.reply({ content: `**${member.displayName}** doesn't have **${guildRole.name}**.`, flags: 64 });
+  }
+
+  await member.roles.remove(guildRole);
+  await interaction.reply(`✅ Removed **${guildRole.name}** from **${member.displayName}**.`);
+}

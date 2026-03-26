@@ -60,6 +60,10 @@ import {
   executeEditrole,
   deleteroleData,
   executeDeleterole,
+  giveroleData,
+  executeGiverole,
+  removeroleData,
+  executeRemoverole,
 } from "./commands/moderation/roles.js";
 import * as channel from "./commands/moderation/channel.js";
 import * as info from "./commands/moderation/info.js";
@@ -164,6 +168,8 @@ const allCommandDefs: any[] = [
   makeroleData,
   editroleData,
   deleteroleData,
+  giveroleData,
+  removeroleData,
   channel.data,
   info.data,
   avatarData,
@@ -241,6 +247,8 @@ commandMap.set("rename", (i) => rename.execute(i));
 commandMap.set("makerole", (i) => executeMakerole(i));
 commandMap.set("editrole", (i) => executeEditrole(i));
 commandMap.set("deleterole", (i) => executeDeleterole(i));
+commandMap.set("giverole", (i) => executeGiverole(i));
+commandMap.set("removerole", (i) => executeRemoverole(i));
 commandMap.set("channel", (i) => channel.execute(i));
 commandMap.set("info", (i) => info.execute(i));
 commandMap.set("avatar", (i) => executeAvatar(i));
