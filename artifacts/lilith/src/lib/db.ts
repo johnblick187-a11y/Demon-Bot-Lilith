@@ -302,6 +302,14 @@ export async function getAutoreacts(guildId: string) {
   return res.rows as { id: number; guild_id: string; trigger: string; emoji: string }[];
 }
 
+export async function removeAutoreact(guildId: string, trigger: string): Promise<boolean> {
+  const res = await pool.query(
+    `DELETE FROM autoreacts WHERE guild_id=$1 AND trigger=$2`,
+    [guildId, trigger.toLowerCase()]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
 export async function addAutoreply(guildId: string, trigger: string, reply: string) {
   await pool.query(
     `INSERT INTO autoreplies (guild_id, trigger, reply) VALUES ($1, $2, $3)`,
