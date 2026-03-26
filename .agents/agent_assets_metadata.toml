@@ -84,3 +84,9 @@ id = "-umTqfFdrLMKqwv6nhnaV"
 uri = "file://attached_assets/generated_images/lilith_v2_pipe.png"
 type = "image"
 title = "Lilith — Pipe"
+
+[[outputs]]
+id = "Mrrp7Me2MnuP31J2L7SNk"
+uri = "file://attached_assets/generated_images/lilith_v2_meth.png"
+type = "image"
+title = "Lilith — Meth Pipe"
