@@ -1,4 +1,4 @@
-import { Message, Client, EmbedBuilder } from "discord.js";
+import { Message, Client, EmbedBuilder, TextChannel } from "discord.js";
 import {
   getAutoreacts,
   getAutoreplies,
@@ -18,16 +18,51 @@ import {
   getMessagesToSummarize,
   saveConversationSummary,
   deleteMessagesByIds,
+  addXp,
+  setLevelInDb,
+  getLevelChannel,
+  getLevelRoleForLevel,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
 import { askLilith, computeMode, summarizeConversation } from "../lib/ai.js";
 import { runAutomod } from "../lib/automod.js";
+import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
   if (!message.guild) return;
 
   // Run automod on every message (has its own guards inside)
   runAutomod(message).catch(() => {});
+
+  // Grant XP (fire-and-forget, human messages only, 60s cooldown)
+  if (!message.author.bot && !isOnCooldown(message.guild.id, message.author.id)) {
+    (async () => {
+      const xpGain = randomXp();
+      const { newXp, oldLevel } = await addXp(message.guild.id, message.author.id, xpGain);
+      const { level: newLevel } = computeLevel(newXp);
+      if (newLevel > oldLevel) {
+        // Update level in DB
+        await setLevelInDb(message.guild.id, message.author.id, newLevel);
+        // Assign level role if configured
+        const roleId = await getLevelRoleForLevel(message.guild.id, newLevel);
+        if (roleId) {
+          const member = await message.guild.members.fetch(message.author.id).catch(() => null);
+          if (member) await member.roles.add(roleId).catch(() => {});
+        }
+        // Announce level-up
+        const levelChannelId = await getLevelChannel(message.guild.id);
+        const announceChannel = levelChannelId
+          ? (message.guild.channels.cache.get(levelChannelId) as TextChannel | undefined) ?? null
+          : (message.channel as TextChannel);
+        if (announceChannel) {
+          const embed = new EmbedBuilder()
+            .setDescription(`🎉 <@${message.author.id}> leveled up to **Level ${newLevel}**!${roleId ? ` You've been given <@&${roleId}>.` : ""}`)
+            .setColor(0xf1c40f);
+          announceChannel.send({ embeds: [embed] }).catch(() => {});
+        }
+      }
+    })().catch(() => {});
+  }
 
   if (message.author.bot) {
     if (message.author.id === client.user?.id) return;

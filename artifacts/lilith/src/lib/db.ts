@@ -43,6 +43,28 @@ export async function initDb() {
       emoji TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_levels (
+      guild_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      xp INTEGER NOT NULL DEFAULT 0,
+      level INTEGER NOT NULL DEFAULT 0,
+      total_messages INTEGER NOT NULL DEFAULT 0,
+      PRIMARY KEY (guild_id, user_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS level_roles (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      level INTEGER NOT NULL,
+      role_id TEXT NOT NULL,
+      UNIQUE(guild_id, level)
+    );
+
+    CREATE TABLE IF NOT EXISTS level_channels (
+      guild_id TEXT PRIMARY KEY,
+      channel_id TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS reaction_roles (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -840,6 +862,121 @@ export async function recordCustomCommandUsage(
        used_date = CURRENT_DATE`,
     [guildId, userId, commandName, currentMonth]
   );
+}
+
+// ─── Leveling ────────────────────────────────────────────────────────────────
+
+export async function getUserLevel(guildId: string, userId: string) {
+  const res = await pool.query(
+    `SELECT * FROM user_levels WHERE guild_id = $1 AND user_id = $2`,
+    [guildId, userId]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function addXp(
+  guildId: string,
+  userId: string,
+  amount: number
+): Promise<{ newXp: number; newLevel: number; oldLevel: number }> {
+  const res = await pool.query(
+    `INSERT INTO user_levels (guild_id, user_id, xp, level, total_messages)
+     VALUES ($1, $2, $3, 0, 1)
+     ON CONFLICT (guild_id, user_id) DO UPDATE
+       SET xp = user_levels.xp + $3,
+           total_messages = user_levels.total_messages + 1
+     RETURNING xp, level`,
+    [guildId, userId, amount]
+  );
+  const { xp: newXp, level: oldLevel } = res.rows[0];
+  return { newXp, newLevel: oldLevel, oldLevel };
+}
+
+export async function setLevelInDb(guildId: string, userId: string, level: number) {
+  await pool.query(
+    `UPDATE user_levels SET level = $3 WHERE guild_id = $1 AND user_id = $2`,
+    [guildId, userId, level]
+  );
+}
+
+export async function getLeaderboard(guildId: string, limit: number) {
+  const res = await pool.query(
+    `SELECT user_id, xp, level, total_messages FROM user_levels
+     WHERE guild_id = $1 ORDER BY xp DESC LIMIT $2`,
+    [guildId, limit]
+  );
+  return res.rows;
+}
+
+export async function setLevelChannel(guildId: string, channelId: string) {
+  await pool.query(
+    `INSERT INTO level_channels (guild_id, channel_id) VALUES ($1, $2)
+     ON CONFLICT (guild_id) DO UPDATE SET channel_id = $2`,
+    [guildId, channelId]
+  );
+}
+
+export async function disableLevelChannel(guildId: string) {
+  await pool.query(`DELETE FROM level_channels WHERE guild_id = $1`, [guildId]);
+}
+
+export async function getLevelChannel(guildId: string): Promise<string | null> {
+  const res = await pool.query(
+    `SELECT channel_id FROM level_channels WHERE guild_id = $1`,
+    [guildId]
+  );
+  return res.rows[0]?.channel_id ?? null;
+}
+
+export async function addLevelRole(guildId: string, level: number, roleId: string) {
+  await pool.query(
+    `INSERT INTO level_roles (guild_id, level, role_id) VALUES ($1, $2, $3)
+     ON CONFLICT (guild_id, level) DO UPDATE SET role_id = $3`,
+    [guildId, level, roleId]
+  );
+}
+
+export async function removeLevelRole(guildId: string, level: number) {
+  await pool.query(
+    `DELETE FROM level_roles WHERE guild_id = $1 AND level = $2`,
+    [guildId, level]
+  );
+}
+
+export async function getLevelRoles(guildId: string) {
+  const res = await pool.query(
+    `SELECT level, role_id FROM level_roles WHERE guild_id = $1 ORDER BY level ASC`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function getLevelRoleForLevel(guildId: string, level: number) {
+  const res = await pool.query(
+    `SELECT role_id FROM level_roles WHERE guild_id = $1 AND level = $2`,
+    [guildId, level]
+  );
+  return res.rows[0]?.role_id ?? null;
+}
+
+export async function setUserXp(guildId: string, userId: string, xp: number) {
+  await pool.query(
+    `INSERT INTO user_levels (guild_id, user_id, xp, level, total_messages)
+     VALUES ($1, $2, $3, 0, 0)
+     ON CONFLICT (guild_id, user_id) DO UPDATE SET xp = $3`,
+    [guildId, userId, xp]
+  );
+}
+
+export async function resetUserXp(guildId: string, userId: string) {
+  await pool.query(
+    `DELETE FROM user_levels WHERE guild_id = $1 AND user_id = $2`,
+    [guildId, userId]
+  );
+}
+
+export async function resetAllXp(guildId: string) {
+  await pool.query(`DELETE FROM user_levels WHERE guild_id = $1`, [guildId]);
 }
 
 // ─── Reaction Roles ──────────────────────────────────────────────────────────

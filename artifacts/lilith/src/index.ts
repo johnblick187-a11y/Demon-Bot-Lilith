@@ -64,6 +64,9 @@ import { avatarData, executeAvatar, bannerData, executeBanner } from "./commands
 import * as automod from "./commands/moderation/automod.js";
 import * as webhook from "./commands/moderation/webhook.js";
 import * as reactionrole from "./commands/moderation/reactionrole.js";
+import * as levelconfig from "./commands/moderation/levelconfig.js";
+import * as rank from "./commands/fun/rank.js";
+import * as leaderboard from "./commands/fun/leaderboard.js";
 import * as autoreact from "./commands/moderation/autoreact.js";
 import * as autoreply from "./commands/moderation/autoreply.js";
 import * as userreact from "./commands/moderation/userreact.js";
@@ -159,6 +162,9 @@ const allCommandDefs: any[] = [
   automod.data,
   webhook.data,
   reactionrole.data,
+  levelconfig.data,
+  rank.data,
+  leaderboard.data,
   autoreact.data,
   autoreply.data,
   userreact.data,
@@ -228,6 +234,9 @@ commandMap.set("banner", (i) => executeBanner(i));
 commandMap.set("automod", (i) => automod.execute(i));
 commandMap.set("webhook", (i) => webhook.execute(i));
 commandMap.set("reactionrole", (i) => reactionrole.execute(i));
+commandMap.set("levelconfig", (i) => levelconfig.execute(i));
+commandMap.set("rank", (i) => rank.execute(i));
+commandMap.set("leaderboard", (i) => leaderboard.execute(i));
 commandMap.set("autoreact", (i) => autoreact.execute(i));
 commandMap.set("autoreply", (i) => autoreply.execute(i));
 commandMap.set("userreact", (i) => userreact.execute(i));
