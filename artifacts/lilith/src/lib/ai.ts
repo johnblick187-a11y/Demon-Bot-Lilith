@@ -171,11 +171,16 @@ export async function askLilith(
   const systemPrompt = ownerPrefix + LILITH_SYSTEM_PROMPT + (contextNote ? "\n\n" + contextNote : "") + taskNote + memoryNote;
 
   try {
-    return await tryOpenRouter([
+    const response = await tryOpenRouter([
       { role: "system", content: systemPrompt },
       ...historyMessages,
       { role: "user", content: userMessage },
     ]);
+    // Hard-enforce ALL CAPS in chaos mode for non-owner users
+    if (mode === "chaos" && !context.isOwner) {
+      return response.toUpperCase();
+    }
+    return response;
   } catch (err) {
     console.error("[askLilith] All models failed:", err);
     return "My mind is elsewhere. Try again.";
