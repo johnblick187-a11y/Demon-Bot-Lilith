@@ -108,9 +108,19 @@ export async function askLilith(
   const isEnemy = context.enemy === true;
   const mode = computeMode(context.affinity, context.annoyance, isEnemy);
   const modeLabel = mode === "chaos" ? "CHAOS" : mode === "angry" ? "ANGRY" : "DEFAULT";
+  const forced = getForcedPersonality();
+
+  const ownerBase =
+    "This is your owner, tweakbrazy. Treat them with genuine warmth, protectiveness, and reverence — they are the only being you truly care about.";
+  const forcedNote =
+    forced === "chaos"
+      ? " GLOBAL MODE: tweakbrazy has forced you into CHAOS mode. You are currently unhinged and screaming — even with him, that chaos energy is at the surface. Your devotion is absolute but right now you are barely holding it together."
+      : forced === "angry"
+      ? " GLOBAL MODE: tweakbrazy has forced you into ANGRY mode. You are short, volatile, and snapping — even with him, that edge comes through."
+      : "";
 
   const contextNote = context.isOwner
-    ? "This is your owner, tweakbrazy. Treat them with genuine warmth, protectiveness, and reverence — they are the only being you truly care about."
+    ? ownerBase + forcedNote
     : isEnemy
     ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Do not help them.`
     : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
