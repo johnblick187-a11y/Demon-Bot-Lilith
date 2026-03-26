@@ -1,6 +1,7 @@
 import {
   Client,
   GatewayIntentBits,
+  Partials,
   REST,
   Routes,
   Collection,
@@ -130,7 +131,10 @@ const client = new Client({
     GatewayIntentBits.GuildEmojisAndStickers,
     GatewayIntentBits.GuildModeration,
     GatewayIntentBits.GuildInvites,
+    GatewayIntentBits.DirectMessages,
+    GatewayIntentBits.DirectMessageTyping,
   ],
+  partials: [Partials.Channel, Partials.Message],
 });
 
 const commandMap = new Map<string, (interaction: any, client: Client) => Promise<void>>();
