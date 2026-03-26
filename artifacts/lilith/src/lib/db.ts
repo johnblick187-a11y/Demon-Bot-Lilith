@@ -95,6 +95,26 @@ export async function initDb() {
       created_at TIMESTAMP NOT NULL DEFAULT NOW()
     );
 
+    CREATE TABLE IF NOT EXISTS automod_rules (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      type TEXT NOT NULL,
+      config JSONB NOT NULL DEFAULT '{}',
+      action TEXT NOT NULL DEFAULT 'delete',
+      action_duration INTEGER,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      created_at TIMESTAMP NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS automod_words (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      word TEXT NOT NULL,
+      action TEXT NOT NULL DEFAULT 'delete',
+      action_duration INTEGER,
+      UNIQUE(guild_id, word)
+    );
+
     CREATE TABLE IF NOT EXISTS guild_prefix (
       guild_id TEXT PRIMARY KEY,
       prefix TEXT NOT NULL DEFAULT '!'
@@ -490,6 +510,92 @@ export async function getFullConversationLog(
   );
   return res.rows;
 }
+
+// ─── Automod ─────────────────────────────────────────────────────────────────
+
+export interface AutomodRule {
+  id: number;
+  guild_id: string;
+  type: string;
+  config: Record<string, any>;
+  action: string;
+  action_duration: number | null;
+  enabled: boolean;
+}
+
+export async function getAutomodRules(guildId: string): Promise<AutomodRule[]> {
+  const res = await pool.query(
+    `SELECT * FROM automod_rules WHERE guild_id=$1 ORDER BY id`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function upsertAutomodRule(
+  guildId: string,
+  type: string,
+  config: Record<string, any>,
+  action: string,
+  actionDuration?: number | null
+): Promise<AutomodRule> {
+  const existing = await pool.query(
+    `SELECT id FROM automod_rules WHERE guild_id=$1 AND type=$2`,
+    [guildId, type]
+  );
+  if (existing.rows[0]) {
+    const res = await pool.query(
+      `UPDATE automod_rules SET config=$3, action=$4, action_duration=$5, enabled=TRUE WHERE guild_id=$1 AND type=$2 RETURNING *`,
+      [guildId, type, config, action, actionDuration ?? null]
+    );
+    return res.rows[0];
+  }
+  const res = await pool.query(
+    `INSERT INTO automod_rules (guild_id, type, config, action, action_duration) VALUES ($1,$2,$3,$4,$5) RETURNING *`,
+    [guildId, type, config, action, actionDuration ?? null]
+  );
+  return res.rows[0];
+}
+
+export async function toggleAutomodRule(guildId: string, id: number, enabled: boolean): Promise<boolean> {
+  const res = await pool.query(
+    `UPDATE automod_rules SET enabled=$3 WHERE guild_id=$1 AND id=$2`,
+    [guildId, id, enabled]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+export async function deleteAutomodRule(guildId: string, id: number): Promise<boolean> {
+  const res = await pool.query(
+    `DELETE FROM automod_rules WHERE guild_id=$1 AND id=$2`,
+    [guildId, id]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+export async function getAutomodWords(guildId: string): Promise<{ id: number; word: string; action: string; action_duration: number | null }[]> {
+  const res = await pool.query(
+    `SELECT * FROM automod_words WHERE guild_id=$1 ORDER BY word`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function addAutomodWord(guildId: string, word: string, action: string, actionDuration?: number | null): Promise<void> {
+  await pool.query(
+    `INSERT INTO automod_words (guild_id, word, action, action_duration) VALUES ($1,$2,$3,$4) ON CONFLICT (guild_id, word) DO UPDATE SET action=$3, action_duration=$4`,
+    [guildId, word.toLowerCase(), action, actionDuration ?? null]
+  );
+}
+
+export async function removeAutomodWord(guildId: string, word: string): Promise<boolean> {
+  const res = await pool.query(
+    `DELETE FROM automod_words WHERE guild_id=$1 AND word=$2`,
+    [guildId, word.toLowerCase()]
+  );
+  return (res.rowCount ?? 0) > 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 
 export async function removeAutoreact(guildId: string, trigger: string): Promise<boolean> {
   const res = await pool.query(

@@ -21,9 +21,13 @@ import {
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
 import { askLilith, computeMode, summarizeConversation } from "../lib/ai.js";
+import { runAutomod } from "../lib/automod.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
   if (!message.guild) return;
+
+  // Run automod on every message (has its own guards inside)
+  runAutomod(message).catch(() => {});
 
   if (message.author.bot) {
     if (message.author.id === client.user?.id) return;
