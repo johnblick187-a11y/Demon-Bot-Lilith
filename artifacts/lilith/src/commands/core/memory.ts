@@ -5,9 +5,11 @@ import {
 } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
+
 export const data = new SlashCommandBuilder()
   .setName("memory")
   .setDescription("View or manage Lilith's memory of a user")
+  .setDefaultMemberPermissions(0n)
   .addSubcommand((sub) =>
     sub
       .setName("view")
@@ -28,13 +30,11 @@ export const data = new SlashCommandBuilder()
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guildId) return;
   const sub = (interaction.options as any).getSubcommand();
-  const isOwner = interaction.user.id === OWNER_ID;
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "No.", flags: 64 });
+  }
 
   const targetUser = (interaction.options as any).getUser("user") ?? interaction.user;
-
-  if (targetUser.id !== interaction.user.id && !isOwner) {
-    return interaction.reply({ content: "You can only manage your own memory.", flags: 64 });
-  }
 
   if (sub === "view") {
     const rows = await getConversationSummary(interaction.guildId, targetUser.id);
