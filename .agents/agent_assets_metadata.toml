@@ -102,3 +102,9 @@ id = "kWjZne9mN_VuoYq3lk2ey"
 uri = "file://attached_assets/generated_images/lilith_v2_meth3.png"
 type = "image"
 title = "Lilith — Meth Pipe (short stem)"
+
+[[outputs]]
+id = "A57rWcvud5K38y2N89MJC"
+uri = "file://attached_assets/generated_images/lilith_v2_meth4.png"
+type = "image"
+title = "Lilith — Meth Pipe"
