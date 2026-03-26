@@ -15,7 +15,7 @@ const OR_MODELS = [
   "meta-llama/llama-3.3-70b-instruct:free",
   "mistralai/mistral-7b-instruct:free",
 ];
-const OR_NSFW_MODEL = "mancer/weaver";
+const OR_NSFW_MODEL = "neversleep/llama-3.1-lumimaid-70b";
 
 async function tryOpenRouter(messages: any[], max_tokens = 800, temperature = 0.9): Promise<string> {
   for (const model of OR_MODELS) {
