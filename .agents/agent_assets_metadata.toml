@@ -174,3 +174,9 @@ id = "7851gcHsLp8MiMOBwIs9P"
 uri = "file://attached_assets/generated_images/lilith_emoji_final.png"
 type = "image"
 title = "Lilith Emoji (PNG)"
+
+[[outputs]]
+id = "OhDlP9b5GASitEE9SU_aH"
+uri = "file://attached_assets/generated_images/lilith_emoji_hq.png"
+type = "image"
+title = "Lilith Emoji — Discord Ready"
