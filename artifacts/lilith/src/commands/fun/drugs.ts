@@ -4,7 +4,10 @@ import { updateRelation } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
 function makeCommand(name: string, description: string) {
-  return new SlashCommandBuilder().setName(name).setDescription(description);
+  return new SlashCommandBuilder()
+    .setName(name)
+    .setDescription(description)
+    .setDefaultMemberPermissions(0n);
 }
 
 export const hitsmethData = makeCommand("hitsmeth", "Hit some meth");
@@ -16,16 +19,14 @@ async function drugExecute(
   interaction: CommandInteraction,
   key: keyof typeof DRUG_RESPONSES
 ) {
+  if (interaction.user.id !== OWNER_ID) {
+    return interaction.reply({ content: "Not for you.", flags: 64 });
+  }
+
   const responses = DRUG_RESPONSES[key];
   const raw = responses[Math.floor(Math.random() * responses.length)];
-  const userId = interaction.user.id;
   const username = interaction.user.username;
-
   const response = raw.replace(/\{user\}/g, `**${username}**`);
-
-  if (userId !== OWNER_ID) {
-    await updateRelation(userId, { affinity: 2 });
-  }
 
   await interaction.reply(response);
 }
