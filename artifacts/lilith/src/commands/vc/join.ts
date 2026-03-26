@@ -18,6 +18,8 @@ export async function execute(interaction: CommandInteraction) {
     return interaction.reply({ content: "Get in a voice channel first.", ephemeral: true });
   }
 
+  await interaction.deferReply();
+
   const connection = joinVoiceChannel({
     channelId: vc.id,
     guildId: vc.guild.id,
@@ -25,10 +27,15 @@ export async function execute(interaction: CommandInteraction) {
   });
 
   try {
-    await entersState(connection, VoiceConnectionStatus.Ready, 30_000);
-  } catch {
+    await entersState(connection, VoiceConnectionStatus.Ready, 15_000);
+  } catch (err: any) {
     connection.destroy();
-    return interaction.reply({ content: "Couldn't connect to voice.", ephemeral: true });
+    const reason = err?.message ?? String(err);
+    return interaction.editReply(
+      `❌ Couldn't connect to **${vc.name}**.\n` +
+      `Make sure I have **Connect** and **Speak** permissions in that channel.\n` +
+      `*(Error: ${reason})*`
+    );
   }
 
   const existing = getMusicState(vc.guild.id);
@@ -42,5 +49,5 @@ export async function execute(interaction: CommandInteraction) {
     });
   }
 
-  await interaction.reply(`🎙️ Joined **${vc.name}**. Don't waste my time.`);
+  await interaction.editReply(`🎙️ Joined **${vc.name}**. Don't waste my time.`);
 }
