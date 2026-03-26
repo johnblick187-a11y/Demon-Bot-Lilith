@@ -13,6 +13,7 @@ interface QueueEntry {
   title: string;
   url: string;
   requestedBy: string;
+  isDirect?: boolean;
 }
 
 interface GuildMusic {
@@ -77,6 +78,19 @@ function streamViaYtDlp(url: string): Readable {
   return proc.stdout as unknown as Readable;
 }
 
+function streamDirectUrl(url: string): Readable {
+  const proc = spawn("ffmpeg", [
+    "-i", url,
+    "-f", "s16le",
+    "-ar", "48000",
+    "-ac", "2",
+    "pipe:1",
+  ]);
+  proc.stderr.on("data", () => {});
+  proc.on("error", () => {});
+  return proc.stdout as unknown as Readable;
+}
+
 export async function searchAndQueue(
   guildId: string,
   query: string,
@@ -110,15 +124,34 @@ export async function playNext(guildId: string): Promise<boolean> {
   state.currentSong = next;
 
   try {
-    const stream = streamViaYtDlp(next.url);
+    const stream = next.isDirect ? streamDirectUrl(next.url) : streamViaYtDlp(next.url);
     const resource = createAudioResource(stream, {
-      inputType: StreamType.Arbitrary,
+      inputType: next.isDirect ? StreamType.Raw : StreamType.Arbitrary,
     });
     state.player.play(resource);
     return true;
   } catch {
     return await playNext(guildId);
   }
+}
+
+export function queueDirectFile(
+  guildId: string,
+  title: string,
+  url: string,
+  requestedBy: string
+): { queued: boolean } | null {
+  const state = guildMusicMap.get(guildId);
+  if (!state) return null;
+
+  const entry: QueueEntry = { title, url, requestedBy, isDirect: true };
+  state.queue.push(entry);
+
+  if (state.player.state.status === AudioPlayerStatus.Idle) {
+    playNext(guildId);
+    return { queued: false };
+  }
+  return { queued: true };
 }
 
 export function createMusicPlayer(guildId: string, connection: VoiceConnection): AudioPlayer {

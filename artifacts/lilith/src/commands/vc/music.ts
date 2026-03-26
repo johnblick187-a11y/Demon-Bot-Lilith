@@ -8,6 +8,7 @@ import { AudioPlayerStatus } from "@discordjs/voice";
 import {
   getMusicState,
   searchAndQueue,
+  queueDirectFile,
   playNext,
   setMusicState,
   createMusicPlayer,
@@ -20,16 +21,24 @@ import {
 
 export const playData = new SlashCommandBuilder()
   .setName("play")
-  .setDescription("Play a song")
+  .setDescription("Play a song — search by name/URL or upload an audio file")
   .addStringOption((opt) =>
-    opt.setName("song").setDescription("Song name or URL").setRequired(true)
+    opt.setName("song").setDescription("Song name or URL").setRequired(false)
+  )
+  .addAttachmentOption((opt) =>
+    opt.setName("file").setDescription("Upload an audio file to play").setRequired(false)
   );
 
 export async function executePlay(interaction: CommandInteraction) {
   await interaction.deferReply();
-  const query = (interaction.options as any).getString("song", true);
+  const query = (interaction.options as any).getString("song") as string | null;
+  const attachment = (interaction.options as any).getAttachment("file") as any | null;
   const member = interaction.member as GuildMember;
   const vc = member.voice.channel;
+
+  if (!query && !attachment) {
+    return interaction.editReply("Give me a song name, URL, or upload a file.");
+  }
 
   if (!vc) {
     return interaction.editReply("Get in a voice channel.");
@@ -55,7 +64,17 @@ export async function executePlay(interaction: CommandInteraction) {
     setMusicState(interaction.guildId, state);
   }
 
-  const result = await searchAndQueue(interaction.guildId, query, interaction.user.username);
+  // Handle uploaded audio file
+  if (attachment) {
+    const title = attachment.name ?? "Uploaded file";
+    const result = queueDirectFile(interaction.guildId, title, attachment.url, interaction.user.username);
+    if (!result) return interaction.editReply("Couldn't queue the file.");
+    return interaction.editReply(
+      result.queued ? `Queued **${title}**` : `Now playing **${title}**`
+    );
+  }
+
+  const result = await searchAndQueue(interaction.guildId, query!, interaction.user.username);
   if (!result) {
     return interaction.editReply("Couldn't find that song. Try harder.");
   }
