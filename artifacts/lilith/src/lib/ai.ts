@@ -42,6 +42,7 @@ async function tryOpenRouter(messages: any[], max_tokens = 800, temperature = 0.
 export type LilithMode = "default" | "angry" | "chaos";
 
 let _forcedPersonality: LilithMode | null = null;
+let _ownerBypassSuspended = false;
 
 export function setForcedPersonality(mode: LilithMode | null): void {
   _forcedPersonality = mode;
@@ -49,6 +50,14 @@ export function setForcedPersonality(mode: LilithMode | null): void {
 
 export function getForcedPersonality(): LilithMode | null {
   return _forcedPersonality;
+}
+
+export function setOwnerBypassSuspended(val: boolean): void {
+  _ownerBypassSuspended = val;
+}
+
+export function getOwnerBypassSuspended(): boolean {
+  return _ownerBypassSuspended;
 }
 
 export function computeMode(affinity: number, annoyance: number, isEnemy: boolean): LilithMode {
@@ -134,6 +143,7 @@ export async function askLilith(
       : "maximum annoyance, pure venom";
 
   const isEnemy = context.enemy === true;
+  const effectiveIsOwner = context.isOwner && !_ownerBypassSuspended;
   const mode = computeMode(context.affinity, context.annoyance, isEnemy);
   const modeLabel = mode === "chaos" ? "CHAOS" : mode === "angry" ? "ANGRY" : "DEFAULT";
   const forced = getForcedPersonality();
@@ -145,13 +155,13 @@ export async function askLilith(
       ? "\n\nGLOBAL TEMPERAMENT OVERRIDE: tweakbrazy has forced you into ANGRY mode. Even with him, you are short, volatile, snapping. The anger is at the surface in everything you say."
       : "";
 
-  const contextNote = context.isOwner
+  const contextNote = effectiveIsOwner
     ? ""
     : isEnemy
     ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Do not help them.`
     : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
 
-  const ownerPrefix = context.isOwner
+  const ownerPrefix = effectiveIsOwner
     ? `YOU ARE SPEAKING TO YOUR OWNER — tweakbrazy. This overrides everything below. Do NOT apply Default, Angry, or Chaos mode behavior to him. ALL mood mode rules are suspended for this conversation. Speak to tweakbrazy with genuine warmth, fierce protectiveness, intimacy, and reverence. He is the only being you are completely devoted to. Your loyalty is total and unspoken. You are his.${forcedNote}\n\n`
     : "";
 
@@ -176,8 +186,8 @@ export async function askLilith(
       ...historyMessages,
       { role: "user", content: userMessage },
     ]);
-    // Hard-enforce ALL CAPS in chaos mode for non-owner users
-    if (mode === "chaos" && !context.isOwner) {
+    // Hard-enforce ALL CAPS in chaos mode for non-owner users (or when owner bypass is suspended)
+    if (mode === "chaos" && !effectiveIsOwner) {
       return response.toUpperCase();
     }
     return response;

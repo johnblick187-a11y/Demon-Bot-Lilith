@@ -30,7 +30,7 @@ import {
   getLilithMoodData,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";
-import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS } from "../lib/ai.js";
+import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS, setOwnerBypassSuspended, getOwnerBypassSuspended } from "../lib/ai.js";
 import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
@@ -71,6 +71,21 @@ export async function handleMessageCreate(message: Message, client: Client) {
           return void message.reply("DM NSFW mode **OFF**. Back to normal.");
         }
         return void message.reply("Usage: `+dmmode on` / `+dmmode off` / `+dmmode status`");
+      }
+
+      // +testmode on/off — suspend owner bypass so Lilith treats you as a regular user
+      if (cmd === "testmode") {
+        const action = args.toLowerCase();
+        if (action === "on") {
+          setOwnerBypassSuspended(true);
+          return void message.reply("Test mode **ON**. Owner bypass suspended — she'll treat you like everyone else.");
+        }
+        if (action === "off") {
+          setOwnerBypassSuspended(false);
+          return void message.reply("Test mode **OFF**. Owner bypass restored.");
+        }
+        const current = getOwnerBypassSuspended();
+        return void message.reply(`Test mode is currently **${current ? "ON" : "OFF"}**. Usage: \`+testmode on\` / \`+testmode off\``);
       }
 
       // +tts <text>
