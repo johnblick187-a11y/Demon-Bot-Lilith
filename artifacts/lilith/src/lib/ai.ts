@@ -143,7 +143,7 @@ export async function askLilith(
       : "maximum annoyance, pure venom";
 
   const isEnemy = context.enemy === true;
-  const effectiveIsOwner = context.isOwner && !_ownerBypassSuspended;
+  const effectiveIsOwner = context.isOwner && !_ownerBypassSuspended && _forcedPersonality === null;
   const mode = computeMode(context.affinity, context.annoyance, isEnemy);
   const modeLabel = mode === "chaos" ? "CHAOS" : mode === "angry" ? "ANGRY" : "DEFAULT";
   const forced = getForcedPersonality();
