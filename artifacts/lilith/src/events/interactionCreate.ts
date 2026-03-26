@@ -7,6 +7,34 @@ export async function handleInteractionCreate(
   client: Client,
   commandMap: Map<string, (interaction: any, client: Client) => Promise<void>>
 ) {
+  // Handle unban select menu
+  if (interaction.isStringSelectMenu() && interaction.customId.startsWith("unban_select:")) {
+    const reason = interaction.customId.slice("unban_select:".length) || "No reason given.";
+    const ids = interaction.values;
+
+    await interaction.deferUpdate();
+
+    const unbanned: string[] = [];
+    const failed: string[] = [];
+
+    for (const id of ids) {
+      try {
+        const ban = await interaction.guild!.bans.fetch(id);
+        await interaction.guild!.members.unban(id, reason);
+        unbanned.push(`**${ban.user.username}**`);
+      } catch {
+        failed.push(`\`${id}\``);
+      }
+    }
+
+    const lines: string[] = [];
+    if (unbanned.length) lines.push(`✅ Unbanned: ${unbanned.join(", ")} — Reason: *${reason}*`);
+    if (failed.length) lines.push(`❌ Failed: ${failed.join(", ")}`);
+
+    await interaction.editReply({ content: lines.join("\n"), components: [] });
+    return;
+  }
+
   if (!interaction.isChatInputCommand()) return;
 
   const userId = interaction.user.id;

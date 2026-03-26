@@ -1,43 +1,51 @@
-import { SlashCommandBuilder, CommandInteraction, PermissionFlagsBits } from "discord.js";
+import {
+  SlashCommandBuilder,
+  CommandInteraction,
+  PermissionFlagsBits,
+  StringSelectMenuBuilder,
+  StringSelectMenuOptionBuilder,
+  ActionRowBuilder,
+} from "discord.js";
 
 export const data = new SlashCommandBuilder()
   .setName("unban")
-  .setDescription("Unban one or more users from the server")
-  .addStringOption((opt) => opt.setName("userid1").setDescription("User ID to unban").setRequired(true))
-  .addStringOption((opt) => opt.setName("userid2").setDescription("Second user ID").setRequired(false))
-  .addStringOption((opt) => opt.setName("userid3").setDescription("Third user ID").setRequired(false))
-  .addStringOption((opt) => opt.setName("userid4").setDescription("Fourth user ID").setRequired(false))
-  .addStringOption((opt) => opt.setName("userid5").setDescription("Fifth user ID").setRequired(false))
-  .addStringOption((opt) => opt.setName("reason").setDescription("Reason").setRequired(false))
+  .setDescription("Select users from the ban list to unban")
+  .addStringOption((opt) =>
+    opt.setName("reason").setDescription("Reason for unban").setRequired(false)
+  )
   .setDefaultMemberPermissions(PermissionFlagsBits.BanMembers);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;
 
-  const reason = (interaction.options as any).getString("reason") ?? "No reason given.";
+  await interaction.deferReply({ flags: 64 });
 
-  const ids = [1, 2, 3, 4, 5]
-    .map((n) => (interaction.options as any).getString(`userid${n}`)?.trim())
-    .filter(Boolean) as string[];
+  const bans = await interaction.guild.bans.fetch();
 
-  await interaction.deferReply();
-
-  const unbanned: string[] = [];
-  const failed: string[] = [];
-
-  for (const id of ids) {
-    try {
-      const ban = await interaction.guild.bans.fetch(id);
-      await interaction.guild.members.unban(id, reason);
-      unbanned.push(`**${ban.user.username}**`);
-    } catch {
-      failed.push(`\`${id}\` (not banned or invalid ID)`);
-    }
+  if (bans.size === 0) {
+    return interaction.editReply("No banned users in this server.");
   }
 
-  const lines: string[] = [];
-  if (unbanned.length) lines.push(`✅ Unbanned: ${unbanned.join(", ")} — Reason: *${reason}*`);
-  if (failed.length) lines.push(`❌ Couldn't unban: ${failed.join(", ")}`);
+  const reason = ((interaction.options as any).getString("reason") ?? "No reason given.").slice(0, 70);
 
-  await interaction.editReply(lines.join("\n"));
+  // Discord select menus support max 25 options
+  const options = bans
+    .first(25)
+    .map((ban) =>
+      new StringSelectMenuOptionBuilder()
+        .setLabel(ban.user.username.slice(0, 100))
+        .setDescription(`ID: ${ban.user.id}${ban.reason ? ` · ${ban.reason.slice(0, 50)}` : ""}`)
+        .setValue(ban.user.id)
+    );
+
+  const menu = new StringSelectMenuBuilder()
+    .setCustomId(`unban_select:${reason}`)
+    .setPlaceholder(`Select users to unban (${bans.size} banned${bans.size > 25 ? ", showing first 25" : ""})`)
+    .setMinValues(1)
+    .setMaxValues(options.length)
+    .addOptions(options);
+
+  const row = new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(menu);
+
+  await interaction.editReply({ content: "Select who to unban:", components: [row] });
 }
