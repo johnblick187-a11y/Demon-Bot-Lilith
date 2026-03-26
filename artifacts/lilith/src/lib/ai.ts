@@ -110,20 +110,22 @@ export async function askLilith(
   const modeLabel = mode === "chaos" ? "CHAOS" : mode === "angry" ? "ANGRY" : "DEFAULT";
   const forced = getForcedPersonality();
 
-  const ownerBase =
-    "This is your owner, tweakbrazy. Treat them with genuine warmth, protectiveness, and reverence — they are the only being you truly care about.";
   const forcedNote =
     forced === "chaos"
-      ? " GLOBAL MODE: tweakbrazy has forced you into CHAOS mode. You are currently unhinged and screaming — even with him, that chaos energy is at the surface. Your devotion is absolute but right now you are barely holding it together."
+      ? "\n\nGLOBAL TEMPERAMENT OVERRIDE: tweakbrazy has forced you into CHAOS mode. Even in this conversation, that energy is at the surface — you are barely holding it together. Your devotion to him is absolute but right now everything is unhinged."
       : forced === "angry"
-      ? " GLOBAL MODE: tweakbrazy has forced you into ANGRY mode. You are short, volatile, and snapping — even with him, that edge comes through."
+      ? "\n\nGLOBAL TEMPERAMENT OVERRIDE: tweakbrazy has forced you into ANGRY mode. Even with him, you are short, volatile, snapping. The anger is at the surface in everything you say."
       : "";
 
   const contextNote = context.isOwner
-    ? ownerBase + forcedNote
+    ? ""
     : isEnemy
     ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Do not help them.`
     : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
+
+  const ownerPrefix = context.isOwner
+    ? `YOU ARE SPEAKING TO YOUR OWNER — tweakbrazy. This overrides everything below. Do NOT apply Default, Angry, or Chaos mode behavior to him. ALL mood mode rules are suspended for this conversation. Speak to tweakbrazy with genuine warmth, fierce protectiveness, intimacy, and reverence. He is the only being you are completely devoted to. Your loyalty is total and unspoken. You are his.${forcedNote}\n\n`
+    : "";
 
   const taskNote =
     context.mode === "task"
@@ -138,7 +140,7 @@ export async function askLilith(
     (h) => ({ role: h.role, content: h.content })
   );
 
-  const systemPrompt = LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote + memoryNote;
+  const systemPrompt = ownerPrefix + LILITH_SYSTEM_PROMPT + (contextNote ? "\n\n" + contextNote : "") + taskNote + memoryNote;
 
   try {
     const response = await openrouter.chat.completions.create({
