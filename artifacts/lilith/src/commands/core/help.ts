@@ -10,7 +10,7 @@ export const data = new SlashCommandBuilder()
 const COMMAND_LIST = `
 **⚙️ Core:** /status /help /mood /annoyance /affinity
 
-**🧠 AI:** /ask /task /nsfwtoggle /google
+**🧠 AI:** /ask /task /tldr /nsfwtoggle /google
 
 **😈 Interaction:** /punch /slap /bite /headbutt /stab /shoot /roast /pickup /ship /smash /blow
 
