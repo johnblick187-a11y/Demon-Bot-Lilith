@@ -178,7 +178,8 @@ export async function askLilith(
     (h) => ({ role: h.role, content: h.content })
   );
 
-  const systemPrompt = ownerPrefix + LILITH_SYSTEM_PROMPT + (contextNote ? "\n\n" + contextNote : "") + taskNote + memoryNote;
+  const globalForcedNote = forced && !effectiveIsOwner ? forcedNote : "";
+  const systemPrompt = ownerPrefix + LILITH_SYSTEM_PROMPT + (contextNote ? "\n\n" + contextNote : "") + globalForcedNote + taskNote + memoryNote;
 
   try {
     const response = await tryOpenRouter([
