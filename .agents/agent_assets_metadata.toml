@@ -168,3 +168,9 @@ id = "SaqjrQA081aiELdR5WowM"
 uri = "file://attached_assets/generated_images/lilith_upscaled.png"
 type = "image"
 title = "Lilith — 4K Upscaled"
+
+[[outputs]]
+id = "7851gcHsLp8MiMOBwIs9P"
+uri = "file://attached_assets/generated_images/lilith_emoji_final.png"
+type = "image"
+title = "Lilith Emoji"
