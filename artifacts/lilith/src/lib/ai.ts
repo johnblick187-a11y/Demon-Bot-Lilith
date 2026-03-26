@@ -8,7 +8,7 @@ const openrouter = new OpenAI({
   apiKey: process.env.OPENROUTER_API_KEY,
 });
 
-const OR_MODEL = "nousresearch/nous-hermes-2-mixtral-8x7b-dpo";
+const OR_MODEL = "nousresearch/hermes-3-llama-3.1-70b";
 
 export type LilithMode = "default" | "angry" | "chaos";
 
