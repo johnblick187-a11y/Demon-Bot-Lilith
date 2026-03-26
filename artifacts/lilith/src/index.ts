@@ -9,6 +9,7 @@ import { initDb } from "./lib/db.js";
 import { handleReady } from "./events/ready.js";
 import { handleMessageCreate } from "./events/messageCreate.js";
 import { handleInteractionCreate } from "./events/interactionCreate.js";
+import { registerLoggingEvents } from "./events/logging.js";
 
 import * as status from "./commands/core/status.js";
 import * as diagnostics from "./commands/core/diagnostics.js";
@@ -44,6 +45,7 @@ import * as kick from "./commands/moderation/kick.js";
 import * as warn from "./commands/moderation/warn.js";
 import * as timeout from "./commands/moderation/timeout.js";
 import * as purge from "./commands/moderation/purge.js";
+import * as setlogchannel from "./commands/moderation/setlogchannel.js";
 import * as rename from "./commands/moderation/rename.js";
 import {
   makeroleData,
@@ -101,6 +103,7 @@ const client = new Client({
     GatewayIntentBits.GuildMembers,
     GatewayIntentBits.GuildMessageReactions,
     GatewayIntentBits.GuildEmojisAndStickers,
+    GatewayIntentBits.GuildModeration,
   ],
 });
 
@@ -133,6 +136,7 @@ const allCommandDefs: any[] = [
   warn.data,
   timeout.data,
   purge.data,
+  setlogchannel.data,
   rename.data,
   makeroleData,
   editroleData,
@@ -193,6 +197,7 @@ commandMap.set("kick", (i) => kick.execute(i));
 commandMap.set("warn", (i) => warn.execute(i));
 commandMap.set("timeout", (i) => timeout.execute(i));
 commandMap.set("purge", (i) => purge.execute(i));
+commandMap.set("setlogchannel", (i) => setlogchannel.execute(i));
 commandMap.set("rename", (i) => rename.execute(i));
 commandMap.set("makerole", (i) => executeMakerole(i));
 commandMap.set("editrole", (i) => executeEditrole(i));
@@ -240,6 +245,8 @@ process.on("unhandledRejection", (reason: any) => {
   if (reason?.code === 10062) return;
   console.error("Unhandled rejection:", reason);
 });
+
+registerLoggingEvents(client);
 
 client.once("ready", () => handleReady(client));
 

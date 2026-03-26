@@ -29,6 +29,11 @@ export async function initDb() {
       chat_enabled BOOLEAN NOT NULL DEFAULT TRUE
     );
 
+    CREATE TABLE IF NOT EXISTS log_channels (
+      guild_id TEXT PRIMARY KEY,
+      channel_id TEXT NOT NULL
+    );
+
     ALTER TABLE guild_settings ADD COLUMN IF NOT EXISTS chat_enabled BOOLEAN NOT NULL DEFAULT TRUE;
 
     CREATE TABLE IF NOT EXISTS autoreacts (
