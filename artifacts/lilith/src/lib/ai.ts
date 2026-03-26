@@ -13,7 +13,18 @@ const OR_NSFW_MODEL = "mancer/weaver";
 
 export type LilithMode = "default" | "angry" | "chaos";
 
+let _forcedPersonality: LilithMode | null = null;
+
+export function setForcedPersonality(mode: LilithMode | null): void {
+  _forcedPersonality = mode;
+}
+
+export function getForcedPersonality(): LilithMode | null {
+  return _forcedPersonality;
+}
+
 export function computeMode(affinity: number, annoyance: number, isEnemy: boolean): LilithMode {
+  if (_forcedPersonality !== null) return _forcedPersonality;
   if (isEnemy) return "chaos";
   const rageScore = annoyance * 0.7 + Math.max(0, -affinity) * 0.3;
   if (rageScore >= 70) return "chaos";
