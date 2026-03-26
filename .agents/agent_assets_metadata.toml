@@ -78,3 +78,9 @@ id = "phe3gPlhf1NI1aHnQxZHO"
 uri = "file://attached_assets/generated_images/lilith_v2_laugh.png"
 type = "image"
 title = "Lilith — Laugh"
+
+[[outputs]]
+id = "-umTqfFdrLMKqwv6nhnaV"
+uri = "file://attached_assets/generated_images/lilith_v2_pipe.png"
+type = "image"
+title = "Lilith — Pipe"
