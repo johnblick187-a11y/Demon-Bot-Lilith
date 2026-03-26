@@ -1,7 +1,9 @@
 import OpenAI from "openai";
+import Replicate from "replicate";
 import { LILITH_SYSTEM_PROMPT } from "./constants.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
 
 export type LilithMode = "default" | "angry" | "chaos";
 
@@ -62,7 +64,6 @@ export async function askLilith(
     isOwner: boolean;
     enemy?: boolean;
     mode?: "task" | "chat";
-    dmNsfw?: boolean;
     history?: { role: "user" | "assistant"; content: string }[];
     memorySummary?: string | null;
   }
@@ -110,9 +111,7 @@ export async function askLilith(
     (h) => ({ role: h.role, content: h.content })
   );
 
-  const systemPrompt = context.dmNsfw
-    ? LILITH_DM_NSFW_PROMPT + memoryNote
-    : LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote + memoryNote;
+  const systemPrompt = LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote + memoryNote;
 
   try {
     const response = await openai.chat.completions.create({
@@ -123,10 +122,60 @@ export async function askLilith(
         { role: "user", content: userMessage },
       ],
       max_tokens: 800,
-      temperature: context.dmNsfw ? 1.0 : 0.9,
+      temperature: 0.9,
     });
     return response.choices[0]?.message?.content ?? "...";
   } catch (err) {
+    return "My mind is elsewhere. Try again.";
+  }
+}
+
+export async function askLilithNsfw(
+  userMessage: string,
+  context: {
+    history?: { role: "user" | "assistant"; content: string }[];
+    memorySummary?: string | null;
+  }
+): Promise<string> {
+  const memoryNote = context.memorySummary
+    ? `\n\n[MEMORY — what you know about this user from past conversations]:\n${context.memorySummary}`
+    : "";
+
+  const systemPrompt = LILITH_DM_NSFW_PROMPT + memoryNote;
+
+  // Build conversation in ChatML format — what nous-hermes and most uncensored models expect
+  let prompt = "";
+  for (const h of context.history ?? []) {
+    const role = h.role === "user" ? "user" : "assistant";
+    prompt += `<|im_start|>${role}\n${h.content}\n<|im_end|>\n`;
+  }
+  prompt += `<|im_start|>user\n${userMessage}\n<|im_end|>\n<|im_start|>assistant\n`;
+
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const output = await replicate.run("nousresearch/nous-hermes-2-mixtral-8x7b-dpo" as any, {
+      input: {
+        prompt,
+        system_prompt: systemPrompt,
+        max_new_tokens: 800,
+        temperature: 1.0,
+        top_p: 0.9,
+        stop: ["<|im_end|>", "<|im_start|>"],
+      },
+    });
+
+    let text: string;
+    if (Array.isArray(output)) {
+      text = (output as string[]).join("");
+    } else if (typeof output === "string") {
+      text = output;
+    } else {
+      text = String(output ?? "");
+    }
+
+    return text.trim() || "...";
+  } catch (err) {
+    console.error("[askLilithNsfw] Replicate error:", err);
     return "My mind is elsewhere. Try again.";
   }
 }

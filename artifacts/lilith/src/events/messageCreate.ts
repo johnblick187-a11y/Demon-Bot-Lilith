@@ -27,7 +27,7 @@ import {
   getLilithMoodData,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";
-import { askLilith, computeMode, summarizeConversation, generateTTS } from "../lib/ai.js";
+import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS } from "../lib/ai.js";
 import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
@@ -152,16 +152,20 @@ export async function handleMessageCreate(message: Message, client: Client) {
         getConversationHistory("DM", OWNER_ID),
         getConversationSummaryRecord("DM", OWNER_ID),
       ]);
-      const response = await askLilith(raw, {
-        userId: OWNER_ID,
-        username: message.author.username,
-        affinity: 100,
-        annoyance: 0,
-        isOwner: true,
-        dmNsfw: dmNsfwEnabled,
-        history,
-        memorySummary: summaryRecord?.summary ?? null,
-      });
+      const response = dmNsfwEnabled
+        ? await askLilithNsfw(raw, {
+            history,
+            memorySummary: summaryRecord?.summary ?? null,
+          })
+        : await askLilith(raw, {
+            userId: OWNER_ID,
+            username: message.author.username,
+            affinity: 100,
+            annoyance: 0,
+            isOwner: true,
+            history,
+            memorySummary: summaryRecord?.summary ?? null,
+          });
       await message.reply(response);
       await saveConversationTurn("DM", OWNER_ID, raw, response);
 
