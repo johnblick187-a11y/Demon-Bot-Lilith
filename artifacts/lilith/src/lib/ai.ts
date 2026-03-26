@@ -9,6 +9,7 @@ const openrouter = new OpenAI({
 });
 
 const OR_MODEL = "nousresearch/hermes-3-llama-3.1-70b";
+const OR_NSFW_MODEL = "mancer/weaver";
 
 export type LilithMode = "default" | "angry" | "chaos";
 
@@ -155,7 +156,7 @@ export async function askLilithNsfw(
 
   try {
     const response = await openrouter.chat.completions.create({
-      model: OR_MODEL,
+      model: OR_NSFW_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         ...historyMessages,
