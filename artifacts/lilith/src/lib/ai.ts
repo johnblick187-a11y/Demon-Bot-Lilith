@@ -1,9 +1,14 @@
 import OpenAI from "openai";
-import Replicate from "replicate";
 import { LILITH_SYSTEM_PROMPT } from "./constants.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const replicate = new Replicate({ auth: process.env.REPLICATE_API_TOKEN });
+
+const openrouter = new OpenAI({
+  baseURL: "https://openrouter.ai/api/v1",
+  apiKey: process.env.OPENROUTER_API_KEY,
+});
+
+const OR_MODEL = "nousresearch/nous-hermes-2-mixtral-8x7b-dpo";
 
 export type LilithMode = "default" | "angry" | "chaos";
 
@@ -114,8 +119,8 @@ export async function askLilith(
   const systemPrompt = LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote + memoryNote;
 
   try {
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o",
+    const response = await openrouter.chat.completions.create({
+      model: OR_MODEL,
       messages: [
         { role: "system", content: systemPrompt },
         ...historyMessages,
@@ -126,6 +131,7 @@ export async function askLilith(
     });
     return response.choices[0]?.message?.content ?? "...";
   } catch (err) {
+    console.error("[askLilith] OpenRouter error:", err);
     return "My mind is elsewhere. Try again.";
   }
 }
@@ -143,39 +149,24 @@ export async function askLilithNsfw(
 
   const systemPrompt = LILITH_DM_NSFW_PROMPT + memoryNote;
 
-  // Build conversation as plain text — Replicate applies the model's own template
-  let prompt = "";
-  for (const h of context.history ?? []) {
-    const speaker = h.role === "user" ? "Human" : "Assistant";
-    prompt += `${speaker}: ${h.content}\n\n`;
-  }
-  prompt += `Human: ${userMessage}\n\nAssistant:`;
+  const historyMessages: OpenAI.Chat.ChatCompletionMessageParam[] = (context.history ?? []).map(
+    (h) => ({ role: h.role, content: h.content })
+  );
 
   try {
-    const modelRef = "meta/meta-llama-3-70b-instruct" as `${string}/${string}`;
-    const output = await replicate.run(modelRef, {
-      input: {
-        prompt,
-        system_prompt: systemPrompt,
-        max_tokens: 800,
-        temperature: 1.0,
-        top_p: 0.9,
-        stop: ["<|im_end|>", "<|im_start|>"],
-      },
+    const response = await openrouter.chat.completions.create({
+      model: OR_MODEL,
+      messages: [
+        { role: "system", content: systemPrompt },
+        ...historyMessages,
+        { role: "user", content: userMessage },
+      ],
+      max_tokens: 800,
+      temperature: 1.0,
     });
-
-    let text: string;
-    if (Array.isArray(output)) {
-      text = output.filter((x): x is string => typeof x === "string").join("");
-    } else if (typeof output === "string") {
-      text = output;
-    } else {
-      text = "";
-    }
-
-    return text.trim() || "...";
+    return response.choices[0]?.message?.content ?? "...";
   } catch (err) {
-    console.error("[askLilithNsfw] Replicate error:", err);
+    console.error("[askLilithNsfw] OpenRouter error:", err);
     return "My mind is elsewhere. Try again.";
   }
 }
