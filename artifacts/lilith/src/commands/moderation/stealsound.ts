@@ -1,6 +1,7 @@
 import {
   SlashCommandBuilder,
   CommandInteraction,
+  PermissionFlagsBits,
 } from "discord.js";
 
 interface SoundboardSound {
@@ -57,7 +58,8 @@ export const data = new SlashCommandBuilder()
           .setDescription("Specific sound name to steal (omit to steal all)")
           .setRequired(false)
       )
-  );
+  )
+  .setDefaultMemberPermissions(PermissionFlagsBits.ManageGuildExpressions);
 
 export async function execute(interaction: CommandInteraction) {
   const sub = (interaction.options as any).getSubcommand();
