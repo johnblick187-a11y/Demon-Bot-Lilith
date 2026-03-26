@@ -26,16 +26,18 @@ export async function executeMakerole(interaction: CommandInteraction) {
 
 export const editroleData = new SlashCommandBuilder()
   .setName("editrole")
-  .setDescription("Edit an existing role name/color")
+  .setDescription("Edit an existing role name/color/position")
   .addRoleOption((opt) => opt.setName("role").setDescription("Role to edit").setRequired(true))
   .addStringOption((opt) => opt.setName("name").setDescription("New name").setRequired(false))
   .addStringOption((opt) => opt.setName("color").setDescription("New hex color").setRequired(false))
+  .addIntegerOption((opt) => opt.setName("position").setDescription("New position in role hierarchy (1 = bottom)").setRequired(false).setMinValue(1))
   .setDefaultMemberPermissions(PermissionFlagsBits.Administrator);
 
 export async function executeEditrole(interaction: CommandInteraction) {
   const role = (interaction.options as any).getRole("role", true) as Role;
   const name = (interaction.options as any).getString("name");
   const color = (interaction.options as any).getString("color");
+  const position = (interaction.options as any).getInteger("position") as number | null;
 
   const guildRole = interaction.guild?.roles.cache.get(role.id);
   if (!guildRole) return interaction.reply({ content: "Role not found.", flags: 64 });
@@ -43,6 +45,7 @@ export async function executeEditrole(interaction: CommandInteraction) {
   await guildRole.edit({
     name: name ?? guildRole.name,
     color: color ? (color as `#${string}`) : guildRole.color,
+    ...(position !== null ? { position } : {}),
   });
 
   await interaction.reply(`✏️ Role **${guildRole.name}** updated.`);
