@@ -138,3 +138,9 @@ id = "rFp0fAtBDtzPqOucVgOge"
 uri = "file://attached_assets/generated_images/lilith_cropped_nohand.png"
 type = "image"
 title = "Lilith — Meth Pipe (final)"
+
+[[outputs]]
+id = "3zZULBooSpIkdJKHSW4ub"
+uri = "file://attached_assets/generated_images/lilith_meth_final.png"
+type = "image"
+title = "Lilith — Meth Pipe"
