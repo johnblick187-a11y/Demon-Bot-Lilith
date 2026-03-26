@@ -10,6 +10,7 @@ import { handleReady } from "./events/ready.js";
 import { handleMessageCreate } from "./events/messageCreate.js";
 import { handleInteractionCreate } from "./events/interactionCreate.js";
 import { registerLoggingEvents } from "./events/logging.js";
+import { handleReactionAdd, handleReactionRemove } from "./events/reactionRoles.js";
 
 import * as status from "./commands/core/status.js";
 import * as diagnostics from "./commands/core/diagnostics.js";
@@ -62,6 +63,7 @@ import * as info from "./commands/moderation/info.js";
 import { avatarData, executeAvatar, bannerData, executeBanner } from "./commands/moderation/avatar.js";
 import * as automod from "./commands/moderation/automod.js";
 import * as webhook from "./commands/moderation/webhook.js";
+import * as reactionrole from "./commands/moderation/reactionrole.js";
 import * as autoreact from "./commands/moderation/autoreact.js";
 import * as autoreply from "./commands/moderation/autoreply.js";
 import * as userreact from "./commands/moderation/userreact.js";
@@ -156,6 +158,7 @@ const allCommandDefs: any[] = [
   bannerData,
   automod.data,
   webhook.data,
+  reactionrole.data,
   autoreact.data,
   autoreply.data,
   userreact.data,
@@ -224,6 +227,7 @@ commandMap.set("avatar", (i) => executeAvatar(i));
 commandMap.set("banner", (i) => executeBanner(i));
 commandMap.set("automod", (i) => automod.execute(i));
 commandMap.set("webhook", (i) => webhook.execute(i));
+commandMap.set("reactionrole", (i) => reactionrole.execute(i));
 commandMap.set("autoreact", (i) => autoreact.execute(i));
 commandMap.set("autoreply", (i) => autoreply.execute(i));
 commandMap.set("userreact", (i) => userreact.execute(i));
@@ -276,6 +280,9 @@ client.on("messageCreate", (message) => handleMessageCreate(message, client));
 client.on("interactionCreate", (interaction) =>
   handleInteractionCreate(interaction, client, commandMap)
 );
+
+client.on("messageReactionAdd", (reaction, user) => handleReactionAdd(reaction, user));
+client.on("messageReactionRemove", (reaction, user) => handleReactionRemove(reaction, user));
 
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN!);

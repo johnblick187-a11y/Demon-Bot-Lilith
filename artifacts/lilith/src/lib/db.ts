@@ -43,6 +43,16 @@ export async function initDb() {
       emoji TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS reaction_roles (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      message_id TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      role_id TEXT NOT NULL,
+      UNIQUE(guild_id, message_id, emoji)
+    );
+
     CREATE TABLE IF NOT EXISTS user_autoreacts (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -830,4 +840,44 @@ export async function recordCustomCommandUsage(
        used_date = CURRENT_DATE`,
     [guildId, userId, commandName, currentMonth]
   );
+}
+
+// ─── Reaction Roles ──────────────────────────────────────────────────────────
+
+export async function addReactionRole(
+  guildId: string,
+  channelId: string,
+  messageId: string,
+  emoji: string,
+  roleId: string
+) {
+  await pool.query(
+    `INSERT INTO reaction_roles (guild_id, channel_id, message_id, emoji, role_id)
+     VALUES ($1, $2, $3, $4, $5)
+     ON CONFLICT (guild_id, message_id, emoji) DO UPDATE SET role_id = $5`,
+    [guildId, channelId, messageId, emoji, roleId]
+  );
+}
+
+export async function removeReactionRole(guildId: string, messageId: string, emoji: string) {
+  await pool.query(
+    `DELETE FROM reaction_roles WHERE guild_id = $1 AND message_id = $2 AND emoji = $3`,
+    [guildId, messageId, emoji]
+  );
+}
+
+export async function getReactionRoles(guildId: string) {
+  const res = await pool.query(
+    `SELECT * FROM reaction_roles WHERE guild_id = $1 ORDER BY id ASC`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function getReactionRoleForEmoji(guildId: string, messageId: string, emoji: string) {
+  const res = await pool.query(
+    `SELECT * FROM reaction_roles WHERE guild_id = $1 AND message_id = $2 AND emoji = $3 LIMIT 1`,
+    [guildId, messageId, emoji]
+  );
+  return res.rows[0] ?? null;
 }
