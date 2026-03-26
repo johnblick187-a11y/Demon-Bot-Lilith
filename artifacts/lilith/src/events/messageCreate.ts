@@ -22,6 +22,7 @@ import {
   setLevelInDb,
   getLevelChannel,
   getLevelRoleForLevel,
+  getDmNsfwEnabled,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
 import { askLilith, computeMode, summarizeConversation } from "../lib/ai.js";
@@ -29,7 +30,48 @@ import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
-  if (!message.guild) return;
+  // Handle DMs — owner only
+  if (!message.guild) {
+    if (message.author.bot) return;
+    if (message.author.id !== OWNER_ID) return;
+
+    const dmNsfwEnabled = await getDmNsfwEnabled();
+    const query = message.content.trim();
+    if (!query) return;
+
+    try {
+      await message.channel.sendTyping();
+      const [history, summaryRecord] = await Promise.all([
+        getConversationHistory("DM", OWNER_ID),
+        getConversationSummaryRecord("DM", OWNER_ID),
+      ]);
+      const response = await askLilith(query, {
+        userId: OWNER_ID,
+        username: message.author.username,
+        affinity: 100,
+        annoyance: 0,
+        isOwner: true,
+        dmNsfw: dmNsfwEnabled,
+        history,
+        memorySummary: summaryRecord?.summary ?? null,
+      });
+      await message.reply(response);
+      await saveConversationTurn("DM", OWNER_ID, query, response);
+
+      (async () => {
+        try {
+          const toSummarize = await getMessagesToSummarize("DM", OWNER_ID);
+          if (!toSummarize || toSummarize.length === 0) return;
+          const existing = summaryRecord?.summary ?? null;
+          const newSummary = await summarizeConversation(existing, toSummarize);
+          const totalCovered = (summaryRecord?.messages_covered ?? 0) + toSummarize.length;
+          await saveConversationSummary("DM", OWNER_ID, newSummary, totalCovered);
+          await deleteMessagesByIds(toSummarize.map((m) => m.id));
+        } catch {}
+      })();
+    } catch {}
+    return;
+  }
 
   // Run automod on every message (has its own guards inside)
   runAutomod(message).catch(() => {});

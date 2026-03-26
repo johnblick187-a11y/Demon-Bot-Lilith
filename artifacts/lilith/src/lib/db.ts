@@ -142,6 +142,11 @@ export async function initDb() {
       UNIQUE(guild_id, user_id, reply)
     );
 
+    CREATE TABLE IF NOT EXISTS bot_settings (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS conversation_history (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -1247,4 +1252,17 @@ export async function getReactionRoleForEmoji(guildId: string, messageId: string
     [guildId, messageId, emoji]
   );
   return res.rows[0] ?? null;
+}
+
+export async function getDmNsfwEnabled(): Promise<boolean> {
+  const res = await pool.query(`SELECT value FROM bot_settings WHERE key = 'dm_nsfw_enabled'`);
+  return res.rows[0]?.value === "true";
+}
+
+export async function setDmNsfwEnabled(enabled: boolean): Promise<void> {
+  await pool.query(
+    `INSERT INTO bot_settings (key, value) VALUES ('dm_nsfw_enabled', $1)
+     ON CONFLICT (key) DO UPDATE SET value = $1`,
+    [enabled ? "true" : "false"]
+  );
 }

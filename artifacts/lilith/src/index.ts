@@ -27,6 +27,7 @@ import * as prefix from "./commands/core/prefix.js";
 import * as createCommand from "./commands/core/createcommand.js";
 import * as enemy from "./commands/core/enemy.js";
 import * as memory from "./commands/core/memory.js";
+import * as dmmode from "./commands/core/dmmode.js";
 
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
@@ -147,6 +148,7 @@ const allCommandDefs: any[] = [
   createCommand.data,
   enemy.data,
   memory.data,
+  dmmode.data,
   ask.data,
   task.data,
   nsfwtoggle.data,
@@ -226,6 +228,7 @@ commandMap.set("changeprefix", (i) => prefix.execute(i));
 commandMap.set("create", (i) => createCommand.execute(i));
 commandMap.set("enemy", (i) => enemy.execute(i));
 commandMap.set("memory", (i) => memory.execute(i));
+commandMap.set("dmmode", (i) => dmmode.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));
