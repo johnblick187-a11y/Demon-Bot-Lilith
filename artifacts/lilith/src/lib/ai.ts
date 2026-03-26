@@ -9,10 +9,10 @@ const openrouter = new OpenAI({
 });
 
 const OR_MODELS = [
-  "meta-llama/llama-3.3-70b-instruct:free",
+  "nousresearch/hermes-3-llama-3.1-70b",
+  "meta-llama/llama-3.3-70b-instruct",
   "nousresearch/hermes-3-llama-3.1-405b:free",
-  "deepseek/deepseek-r1:free",
-  "google/gemma-2-9b-it:free",
+  "meta-llama/llama-3.3-70b-instruct:free",
   "mistralai/mistral-7b-instruct:free",
 ];
 const OR_NSFW_MODEL = "mancer/weaver";
