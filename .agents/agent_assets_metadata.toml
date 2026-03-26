@@ -90,3 +90,9 @@ id = "Mrrp7Me2MnuP31J2L7SNk"
 uri = "file://attached_assets/generated_images/lilith_v2_meth.png"
 type = "image"
 title = "Lilith — Meth Pipe"
+
+[[outputs]]
+id = "8I7MccYjHxwK1cYW1MvzF"
+uri = "file://attached_assets/generated_images/lilith_v2_meth2.png"
+type = "image"
+title = "Lilith — Meth Pipe"
