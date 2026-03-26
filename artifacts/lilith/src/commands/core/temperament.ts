@@ -3,8 +3,8 @@ import { OWNER_ID } from "../../lib/constants.js";
 import { setForcedPersonality, getForcedPersonality, LilithMode } from "../../lib/ai.js";
 
 export const data = new SlashCommandBuilder()
-  .setName("personality")
-  .setDescription("Force Lilith into a specific personality mode (owner only)")
+  .setName("temperament")
+  .setDescription("Switch Lilith's temperament (owner only)")
   .addStringOption((opt) =>
     opt
       .setName("mode")

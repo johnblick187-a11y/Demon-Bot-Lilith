@@ -29,7 +29,7 @@ import * as createCommand from "./commands/core/createcommand.js";
 import * as enemy from "./commands/core/enemy.js";
 import * as memory from "./commands/core/memory.js";
 import * as dmmode from "./commands/core/dmmode.js";
-import * as personality from "./commands/core/personality.js";
+import * as temperament from "./commands/core/temperament.js";
 import * as mentalstate from "./commands/core/mentalstate.js";
 
 import * as ask from "./commands/ai/ask.js";
@@ -155,7 +155,7 @@ const allCommandDefs: any[] = [
   enemy.data,
   memory.data,
   dmmode.data,
-  personality.data,
+  temperament.data,
   mentalstate.data,
   ask.data,
   task.data,
@@ -237,7 +237,7 @@ commandMap.set("create", (i) => createCommand.execute(i));
 commandMap.set("enemy", (i) => enemy.execute(i));
 commandMap.set("memory", (i) => memory.execute(i));
 commandMap.set("dmmode", (i) => dmmode.execute(i));
-commandMap.set("personality", (i) => personality.execute(i));
+commandMap.set("temperament", (i) => temperament.execute(i));
 commandMap.set("mentalstate", (i) => mentalstate.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
