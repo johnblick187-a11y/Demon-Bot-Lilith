@@ -1,4 +1,4 @@
-import { Message, Client, EmbedBuilder, TextChannel } from "discord.js";
+import { Message, Client, EmbedBuilder, TextChannel, AttachmentBuilder } from "discord.js";
 import {
   getAutoreacts,
   getAutoreplies,
@@ -23,9 +23,11 @@ import {
   getLevelChannel,
   getLevelRoleForLevel,
   getDmNsfwEnabled,
+  setDmNsfwEnabled,
+  getLilithMoodData,
 } from "../lib/db.js";
-import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
-import { askLilith, computeMode, summarizeConversation } from "../lib/ai.js";
+import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";
+import { askLilith, computeMode, summarizeConversation, generateTTS } from "../lib/ai.js";
 import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
@@ -35,17 +37,122 @@ export async function handleMessageCreate(message: Message, client: Client) {
     if (message.author.bot) return;
     if (message.author.id !== OWNER_ID) return;
 
-    const dmNsfwEnabled = await getDmNsfwEnabled();
-    const query = message.content.trim();
-    if (!query) return;
+    const raw = message.content.trim();
+    if (!raw) return;
 
+    // + prefix commands
+    if (raw.startsWith("+")) {
+      const withoutPrefix = raw.slice(1).trim();
+      const parts = withoutPrefix.split(/\s+/);
+      const cmd = parts[0]?.toLowerCase();
+      const args = parts.slice(1).join(" ");
+
+      // +dmmode on/off/status
+      if (cmd === "dmmode") {
+        const action = args.toLowerCase();
+        if (action === "status") {
+          const enabled = await getDmNsfwEnabled();
+          return void message.reply(`DM NSFW mode is **${enabled ? "ON" : "OFF"}**.`);
+        }
+        if (action === "on") {
+          await setDmNsfwEnabled(true);
+          return void message.reply("DM NSFW mode **ON**. I'll be waiting.");
+        }
+        if (action === "off") {
+          await setDmNsfwEnabled(false);
+          return void message.reply("DM NSFW mode **OFF**. Back to normal.");
+        }
+        return void message.reply("Usage: `+dmmode on` / `+dmmode off` / `+dmmode status`");
+      }
+
+      // +tts <text>
+      if (cmd === "tts") {
+        if (!args) return void message.reply("Usage: `+tts <text>`");
+        try {
+          await message.channel.sendTyping();
+          const buf = await generateTTS(args);
+          const attachment = new AttachmentBuilder(buf, { name: "lilith_tts.mp3" });
+          return void message.reply({ content: `🎙️ *"${args}"*`, files: [attachment] });
+        } catch {
+          return void message.reply("TTS failed.");
+        }
+      }
+
+      // +mood
+      if (cmd === "mood") {
+        const MOODS = [
+          { min: 0,  max: 15,  mood: "Murderous",             emoji: "🩸", color: 0x8b0000 },
+          { min: 16, max: 30,  mood: "Seething",               emoji: "🔥", color: 0xff0000 },
+          { min: 31, max: 45,  mood: "Irritated",              emoji: "😤", color: 0xff4500 },
+          { min: 46, max: 60,  mood: "Indifferent",            emoji: "😑", color: 0x4a4a4a },
+          { min: 61, max: 75,  mood: "Amused",                 emoji: "😏", color: 0x9932cc },
+          { min: 76, max: 90,  mood: "Dangerously Good",       emoji: "😈", color: 0x6a0dad },
+          { min: 91, max: 100, mood: "Suspiciously Pleasant",  emoji: "🖤", color: 0x2a0050 },
+        ];
+        const { avgAnnoyance, enemyCount, userCount } = await getLilithMoodData();
+        const hour = new Date().getHours();
+        const timeFactor = Math.round(Math.sin((hour / 24) * Math.PI * 2) * 8);
+        const score = Math.max(0, Math.min(100, 100 - avgAnnoyance - enemyCount * 8 + timeFactor));
+        const entry = MOODS.find((m) => score >= m.min && score <= m.max) ?? MOODS[3];
+        const bar = "🟪".repeat(Math.round(score / 10)) + "⬛".repeat(10 - Math.round(score / 10));
+        const embed = new EmbedBuilder()
+          .setTitle(`${entry.emoji} Lilith's Current Mood`)
+          .setColor(entry.color)
+          .setDescription(`**${entry.mood}**\n\n${bar}\n\nMood Index: **${score}/100**`)
+          .addFields(
+            { name: "Avg. Annoyance", value: `${avgAnnoyance}/100`, inline: true },
+            { name: "Active Enemies", value: `${enemyCount}`, inline: true },
+            { name: "Users Tracked", value: `${userCount}`, inline: true }
+          );
+        return void message.reply({ embeds: [embed] });
+      }
+
+      // +affinity
+      if (cmd === "affinity") {
+        const rel = await getRelation(OWNER_ID, message.author.username);
+        return void message.reply(`Your affinity with me: **${rel.affinity}/100**.`);
+      }
+
+      // +annoyance
+      if (cmd === "annoyance") {
+        const rel = await getRelation(OWNER_ID, message.author.username);
+        return void message.reply(`Your annoyance level: **${rel.annoyance}/100**.`);
+      }
+
+      // drug commands
+      if (cmd === "hitsmeth" || cmd === "hitsweed" || cmd === "chugsdrink" || cmd === "popspill") {
+        const key = cmd as keyof typeof DRUG_RESPONSES;
+        const lines = DRUG_RESPONSES[key];
+        const line = lines[Math.floor(Math.random() * lines.length)];
+        return void message.channel.send(line.replace(/\{user\}/gi, `**${message.author.displayName ?? message.author.username}**`));
+      }
+
+      // +help
+      if (cmd === "help") {
+        return void message.reply(
+          "**DM commands (+ prefix)**\n" +
+          "`+dmmode on/off/status` — toggle NSFW DM mode\n" +
+          "`+tts <text>` — hear my voice\n" +
+          "`+mood` — my current mood\n" +
+          "`+affinity` — your affinity with me\n" +
+          "`+annoyance` — your annoyance level\n" +
+          "`+hitsmeth` `+hitsweed` `+chugsdrink` `+popspill` — you know what these do\n\n" +
+          "Anything else you send me — I'll respond."
+        );
+      }
+
+      return void message.reply(`Unknown command. Try \`+help\`.`);
+    }
+
+    // No prefix — AI responds
+    const dmNsfwEnabled = await getDmNsfwEnabled();
     try {
       await message.channel.sendTyping();
       const [history, summaryRecord] = await Promise.all([
         getConversationHistory("DM", OWNER_ID),
         getConversationSummaryRecord("DM", OWNER_ID),
       ]);
-      const response = await askLilith(query, {
+      const response = await askLilith(raw, {
         userId: OWNER_ID,
         username: message.author.username,
         affinity: 100,
@@ -56,7 +163,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
         memorySummary: summaryRecord?.summary ?? null,
       });
       await message.reply(response);
-      await saveConversationTurn("DM", OWNER_ID, query, response);
+      await saveConversationTurn("DM", OWNER_ID, raw, response);
 
       (async () => {
         try {
