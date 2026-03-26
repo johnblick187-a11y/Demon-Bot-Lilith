@@ -172,11 +172,155 @@ export const data = new SlashCommandBuilder()
           .setRequired(false)
       )
   )
+  .addSubcommandGroup((group) =>
+    group
+      .setName("category")
+      .setDescription("Manage channel categories")
+      .addSubcommand((sub) =>
+        sub
+          .setName("create")
+          .setDescription("Create a new category")
+          .addStringOption((opt) =>
+            opt.setName("name").setDescription("Category name").setRequired(true)
+          )
+          .addIntegerOption((opt) =>
+            opt
+              .setName("position")
+              .setDescription("Position in the list (0 = top)")
+              .setMinValue(0)
+              .setRequired(false)
+          )
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("delete")
+          .setDescription("Delete a category")
+          .addChannelOption((opt) =>
+            opt
+              .setName("category")
+              .setDescription("Category to delete")
+              .addChannelTypes(ChannelType.GuildCategory)
+              .setRequired(true)
+          )
+          .addBooleanOption((opt) =>
+            opt
+              .setName("delete-channels")
+              .setDescription("Also delete all channels inside it (default: false — channels stay, just unparented)")
+              .setRequired(false)
+          )
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("rename")
+          .setDescription("Rename a category")
+          .addChannelOption((opt) =>
+            opt
+              .setName("category")
+              .setDescription("Category to rename")
+              .addChannelTypes(ChannelType.GuildCategory)
+              .setRequired(true)
+          )
+          .addStringOption((opt) =>
+            opt.setName("name").setDescription("New name").setRequired(true)
+          )
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("lock")
+          .setDescription("Lock all text channels inside a category")
+          .addChannelOption((opt) =>
+            opt
+              .setName("category")
+              .setDescription("Category to lock")
+              .addChannelTypes(ChannelType.GuildCategory)
+              .setRequired(true)
+          )
+      )
+      .addSubcommand((sub) =>
+        sub
+          .setName("unlock")
+          .setDescription("Unlock all text channels inside a category")
+          .addChannelOption((opt) =>
+            opt
+              .setName("category")
+              .setDescription("Category to unlock")
+              .addChannelTypes(ChannelType.GuildCategory)
+              .setRequired(true)
+          )
+      )
+  )
   .setDefaultMemberPermissions(PermissionFlagsBits.ManageChannels);
 
 export async function execute(interaction: CommandInteraction) {
   if (!interaction.guild) return;
-  const sub = (interaction.options as any).getSubcommand();
+  const group = (interaction.options as any).getSubcommandGroup(false) as string | null;
+  const sub   = (interaction.options as any).getSubcommand();
+
+  // --- Category subcommand group ---
+  if (group === "category") {
+    if (sub === "create") {
+      const name     = (interaction.options as any).getString("name", true) as string;
+      const position = (interaction.options as any).getInteger("position") as number | null;
+      const cat = await interaction.guild.channels.create({
+        name,
+        type: ChannelType.GuildCategory,
+        ...(position !== null ? { position } : {}),
+      });
+      return interaction.reply(`✅ Created category **${cat.name}**.`);
+    }
+
+    if (sub === "delete") {
+      const cat          = (interaction.options as any).getChannel("category", true) as CategoryChannel;
+      const deleteInside = ((interaction.options as any).getBoolean("delete-channels") ?? false) as boolean;
+
+      if (deleteInside) {
+        const children = cat.children.cache;
+        for (const [, ch] of children) {
+          await ch.delete().catch(() => {});
+        }
+        await cat.delete();
+        return interaction.reply(`🗑️ Deleted category **${cat.name}** and **${children.size}** channel(s) inside it.`);
+      } else {
+        for (const [, ch] of cat.children.cache) {
+          await ch.setParent(null).catch(() => {});
+        }
+        await cat.delete();
+        return interaction.reply(`🗑️ Deleted category **${cat.name}**. Channels inside were moved out.`);
+      }
+    }
+
+    if (sub === "rename") {
+      const cat     = (interaction.options as any).getChannel("category", true) as CategoryChannel;
+      const newName = (interaction.options as any).getString("name", true) as string;
+      const old     = cat.name;
+      await cat.setName(newName);
+      return interaction.reply(`✅ Renamed category **${old}** → **${newName}**.`);
+    }
+
+    if (sub === "lock") {
+      const cat      = (interaction.options as any).getChannel("category", true) as CategoryChannel;
+      const text     = cat.children.cache.filter((c) => c.type === ChannelType.GuildText);
+      let count = 0;
+      for (const [, ch] of text) {
+        await (ch as TextChannel).permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: false }).catch(() => {});
+        count++;
+      }
+      return interaction.reply(`🔒 Locked **${count}** text channel(s) in **${cat.name}**.`);
+    }
+
+    if (sub === "unlock") {
+      const cat  = (interaction.options as any).getChannel("category", true) as CategoryChannel;
+      const text = cat.children.cache.filter((c) => c.type === ChannelType.GuildText);
+      let count = 0;
+      for (const [, ch] of text) {
+        await (ch as TextChannel).permissionOverwrites.edit(interaction.guild.roles.everyone, { SendMessages: null }).catch(() => {});
+        count++;
+      }
+      return interaction.reply(`🔓 Unlocked **${count}** text channel(s) in **${cat.name}**.`);
+    }
+
+    return;
+  }
 
   if (sub === "create") {
     const name     = (interaction.options as any).getString("name", true) as string;
