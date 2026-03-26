@@ -33,7 +33,12 @@ import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateT
 import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
+const recentlyProcessed = new Set<string>();
+
 export async function handleMessageCreate(message: Message, client: Client) {
+  if (recentlyProcessed.has(message.id)) return;
+  recentlyProcessed.add(message.id);
+  setTimeout(() => recentlyProcessed.delete(message.id), 10_000);
   // Handle DMs — owner only
   if (!message.guild) {
     if (message.author.bot) return;
