@@ -1,8 +1,12 @@
 import { GuildMember, EmbedBuilder, TextChannel } from "discord.js";
 import { recordInviteUse, markMemberLeft, getLevelChannel } from "../lib/db.js";
 import { findInviterOnJoin } from "../lib/inviteCache.js";
+import { trackMemberJoin } from "../lib/antinuke.js";
 
 export async function handleGuildMemberAdd(member: GuildMember) {
+  // Anti-raid tracking (fire and forget)
+  trackMemberJoin(member.guild).catch(() => {});
+
   const { inviterId, code } = await findInviterOnJoin(member.guild);
 
   if (inviterId && inviterId !== "unknown" && code) {

@@ -75,6 +75,39 @@ export async function initDb() {
       still_in_server BOOLEAN NOT NULL DEFAULT TRUE
     );
 
+    CREATE TABLE IF NOT EXISTS lockdown_overwrites (
+      guild_id TEXT NOT NULL,
+      channel_id TEXT NOT NULL,
+      allow TEXT NOT NULL DEFAULT '0',
+      deny TEXT NOT NULL DEFAULT '0',
+      PRIMARY KEY (guild_id, channel_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS lockdown_state (
+      guild_id TEXT PRIMARY KEY,
+      active BOOLEAN NOT NULL DEFAULT FALSE,
+      reason TEXT,
+      started_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE TABLE IF NOT EXISTS anti_nuke_settings (
+      guild_id TEXT PRIMARY KEY,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      channel_threshold INTEGER NOT NULL DEFAULT 3,
+      ban_threshold INTEGER NOT NULL DEFAULT 5,
+      role_threshold INTEGER NOT NULL DEFAULT 3,
+      window_seconds INTEGER NOT NULL DEFAULT 10,
+      action TEXT NOT NULL DEFAULT 'ban'
+    );
+
+    CREATE TABLE IF NOT EXISTS anti_raid_settings (
+      guild_id TEXT PRIMARY KEY,
+      enabled BOOLEAN NOT NULL DEFAULT TRUE,
+      join_threshold INTEGER NOT NULL DEFAULT 10,
+      window_seconds INTEGER NOT NULL DEFAULT 30,
+      action TEXT NOT NULL DEFAULT 'lockdown'
+    );
+
     CREATE TABLE IF NOT EXISTS server_backups (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -995,6 +1028,101 @@ export async function resetUserXp(guildId: string, userId: string) {
 
 export async function resetAllXp(guildId: string) {
   await pool.query(`DELETE FROM user_levels WHERE guild_id = $1`, [guildId]);
+}
+
+// ─── Lockdown ────────────────────────────────────────────────────────────────
+
+export async function saveLockdownOverwrites(
+  guildId: string,
+  overwrites: { channelId: string; allow: string; deny: string }[]
+) {
+  for (const o of overwrites) {
+    await pool.query(
+      `INSERT INTO lockdown_overwrites (guild_id, channel_id, allow, deny)
+       VALUES ($1, $2, $3, $4)
+       ON CONFLICT (guild_id, channel_id) DO UPDATE SET allow = $3, deny = $4`,
+      [guildId, o.channelId, o.allow, o.deny]
+    );
+  }
+}
+
+export async function getLockdownOverwrites(guildId: string) {
+  const res = await pool.query(
+    `SELECT channel_id, allow, deny FROM lockdown_overwrites WHERE guild_id = $1`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function clearLockdownOverwrites(guildId: string) {
+  await pool.query(`DELETE FROM lockdown_overwrites WHERE guild_id = $1`, [guildId]);
+}
+
+export async function setLockdownState(guildId: string, active: boolean, reason: string | null) {
+  await pool.query(
+    `INSERT INTO lockdown_state (guild_id, active, reason, started_at)
+     VALUES ($1, $2, $3, NOW())
+     ON CONFLICT (guild_id) DO UPDATE SET active = $2, reason = $3, started_at = NOW()`,
+    [guildId, active, reason]
+  );
+}
+
+export async function getLockdownState(guildId: string) {
+  const res = await pool.query(
+    `SELECT active, reason, started_at FROM lockdown_state WHERE guild_id = $1`,
+    [guildId]
+  );
+  return res.rows[0] ?? null;
+}
+
+// ─── Anti-Nuke / Anti-Raid Settings ─────────────────────────────────────────
+
+export async function getAntiNukeSettings(guildId: string) {
+  const res = await pool.query(
+    `SELECT * FROM anti_nuke_settings WHERE guild_id = $1`,
+    [guildId]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function setAntiNukeSettings(
+  guildId: string,
+  settings: {
+    enabled: boolean;
+    channel_threshold: number;
+    ban_threshold: number;
+    role_threshold: number;
+    window_seconds: number;
+  }
+) {
+  await pool.query(
+    `INSERT INTO anti_nuke_settings (guild_id, enabled, channel_threshold, ban_threshold, role_threshold, window_seconds)
+     VALUES ($1, $2, $3, $4, $5, $6)
+     ON CONFLICT (guild_id) DO UPDATE SET
+       enabled = $2, channel_threshold = $3, ban_threshold = $4,
+       role_threshold = $5, window_seconds = $6`,
+    [guildId, settings.enabled, settings.channel_threshold, settings.ban_threshold, settings.role_threshold, settings.window_seconds]
+  );
+}
+
+export async function getAntiRaidSettings(guildId: string) {
+  const res = await pool.query(
+    `SELECT * FROM anti_raid_settings WHERE guild_id = $1`,
+    [guildId]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function setAntiRaidSettings(
+  guildId: string,
+  settings: { enabled: boolean; join_threshold: number; window_seconds: number }
+) {
+  await pool.query(
+    `INSERT INTO anti_raid_settings (guild_id, enabled, join_threshold, window_seconds)
+     VALUES ($1, $2, $3, $4)
+     ON CONFLICT (guild_id) DO UPDATE SET enabled = $2, join_threshold = $3, window_seconds = $4`,
+    [guildId, settings.enabled, settings.join_threshold, settings.window_seconds]
+  );
 }
 
 // ─── Server Backups ──────────────────────────────────────────────────────────

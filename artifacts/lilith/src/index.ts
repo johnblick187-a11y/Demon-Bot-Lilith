@@ -13,6 +13,7 @@ import { registerLoggingEvents } from "./events/logging.js";
 import { handleReactionAdd, handleReactionRemove } from "./events/reactionRoles.js";
 import { handleGuildMemberAdd, handleGuildMemberRemove } from "./events/memberEvents.js";
 import { cacheAllGuilds, updateCacheOnInviteCreate, updateCacheOnInviteDelete } from "./lib/inviteCache.js";
+import { handleChannelDelete, handleGuildBanAdd, handleRoleDelete } from "./events/nukeEvents.js";
 
 import * as status from "./commands/core/status.js";
 import * as diagnostics from "./commands/core/diagnostics.js";
@@ -69,6 +70,8 @@ import * as reactionrole from "./commands/moderation/reactionrole.js";
 import * as levelconfig from "./commands/moderation/levelconfig.js";
 import * as invites from "./commands/moderation/invites.js";
 import * as massnick from "./commands/moderation/massnick.js";
+import * as lockdown from "./commands/moderation/lockdown.js";
+import * as antinuke from "./commands/moderation/antinuke.js";
 import * as serverbackup from "./commands/moderation/serverbackup.js";
 import * as rank from "./commands/fun/rank.js";
 import * as leaderboard from "./commands/fun/leaderboard.js";
@@ -171,6 +174,8 @@ const allCommandDefs: any[] = [
   levelconfig.data,
   invites.data,
   massnick.data,
+  lockdown.data,
+  antinuke.data,
   serverbackup.data,
   rank.data,
   leaderboard.data,
@@ -246,6 +251,8 @@ commandMap.set("reactionrole", (i) => reactionrole.execute(i));
 commandMap.set("levelconfig", (i) => levelconfig.execute(i));
 commandMap.set("invites", (i) => invites.execute(i));
 commandMap.set("massnick", (i) => massnick.execute(i));
+commandMap.set("lockdown", (i) => lockdown.execute(i));
+commandMap.set("antinuke", (i) => antinuke.execute(i));
 commandMap.set("serverbackup", (i) => serverbackup.execute(i));
 commandMap.set("rank", (i) => rank.execute(i));
 commandMap.set("leaderboard", (i) => leaderboard.execute(i));
@@ -310,6 +317,10 @@ client.on("guildMemberRemove", (member) => handleGuildMemberRemove(member as any
 
 client.on("inviteCreate", (invite) => updateCacheOnInviteCreate(invite));
 client.on("inviteDelete", (invite) => updateCacheOnInviteDelete(invite));
+
+client.on("channelDelete", (channel) => handleChannelDelete(channel as any));
+client.on("guildBanAdd", (ban) => handleGuildBanAdd(ban));
+client.on("roleDelete", (role) => handleRoleDelete(role));
 
 async function registerCommands() {
   const rest = new REST({ version: "10" }).setToken(TOKEN!);
