@@ -30,6 +30,7 @@ import * as enemy from "./commands/core/enemy.js";
 import * as memory from "./commands/core/memory.js";
 import * as dmmode from "./commands/core/dmmode.js";
 import * as temperament from "./commands/core/temperament.js";
+import { loadForcedPersonalityFromDb } from "./lib/ai.js";
 import * as mentalstate from "./commands/core/mentalstate.js";
 import * as setannoyance from "./commands/core/setannoyance.js";
 import * as setaffinity from "./commands/core/setaffinity.js";
@@ -404,6 +405,7 @@ async function main() {
   await client.login(TOKEN);
 
   client.once("ready", async () => {
+    await loadForcedPersonalityFromDb();
     await registerCommands();
     await cacheAllGuilds(client.guilds.cache);
   });

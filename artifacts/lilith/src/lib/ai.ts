@@ -1,5 +1,6 @@
 import OpenAI from "openai";
 import { LILITH_SYSTEM_PROMPT } from "./constants.js";
+import { getForcedPersonalityFromDb, setForcedPersonalityInDb } from "./db.js";
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -9,9 +10,9 @@ const openrouter = new OpenAI({
 });
 
 const OR_MODELS = [
-  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
   "nousresearch/hermes-3-llama-3.1-70b",
   "meta-llama/llama-3.3-70b-instruct",
+  "cognitivecomputations/dolphin-mistral-24b-venice-edition:free",
   "nousresearch/hermes-3-llama-3.1-405b:free",
   "meta-llama/llama-3.3-70b-instruct:free",
   "mistralai/mistral-7b-instruct:free",
@@ -47,10 +48,16 @@ let _ownerBypassSuspended = false;
 
 export function setForcedPersonality(mode: LilithMode | null): void {
   _forcedPersonality = mode;
+  setForcedPersonalityInDb(mode).catch(() => {});
 }
 
 export function getForcedPersonality(): LilithMode | null {
   return _forcedPersonality;
+}
+
+export async function loadForcedPersonalityFromDb(): Promise<void> {
+  const val = await getForcedPersonalityFromDb();
+  _forcedPersonality = val as LilithMode | null;
 }
 
 export function setOwnerBypassSuspended(val: boolean): void {

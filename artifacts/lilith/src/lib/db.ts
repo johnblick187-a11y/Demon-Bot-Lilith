@@ -1294,6 +1294,20 @@ export async function getReactionRoleForEmoji(guildId: string, messageId: string
   return res.rows[0] ?? null;
 }
 
+export async function getForcedPersonalityFromDb(): Promise<string | null> {
+  const res = await pool.query(`SELECT value FROM bot_settings WHERE key = 'forced_personality'`);
+  const val = res.rows[0]?.value;
+  return val === "null" || !val ? null : val;
+}
+
+export async function setForcedPersonalityInDb(mode: string | null): Promise<void> {
+  await pool.query(
+    `INSERT INTO bot_settings (key, value) VALUES ('forced_personality', $1)
+     ON CONFLICT (key) DO UPDATE SET value = $1`,
+    [mode ?? "null"]
+  );
+}
+
 export async function getDmNsfwEnabled(): Promise<boolean> {
   const res = await pool.query(`SELECT value FROM bot_settings WHERE key = 'dm_nsfw_enabled'`);
   return res.rows[0]?.value === "true";
