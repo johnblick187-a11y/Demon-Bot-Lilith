@@ -143,21 +143,21 @@ export async function askLilithNsfw(
 
   const systemPrompt = LILITH_DM_NSFW_PROMPT + memoryNote;
 
-  // Build conversation in ChatML format — what nous-hermes and most uncensored models expect
+  // Build conversation as plain text — Replicate applies the model's own template
   let prompt = "";
   for (const h of context.history ?? []) {
-    const role = h.role === "user" ? "user" : "assistant";
-    prompt += `<|im_start|>${role}\n${h.content}\n<|im_end|>\n`;
+    const speaker = h.role === "user" ? "Human" : "Assistant";
+    prompt += `${speaker}: ${h.content}\n\n`;
   }
-  prompt += `<|im_start|>user\n${userMessage}\n<|im_end|>\n<|im_start|>assistant\n`;
+  prompt += `Human: ${userMessage}\n\nAssistant:`;
 
   try {
-    const modelRef = "nousresearch/nous-hermes-2-mixtral-8x7b-dpo" as `${string}/${string}`;
+    const modelRef = "meta/meta-llama-3-70b-instruct" as `${string}/${string}`;
     const output = await replicate.run(modelRef, {
       input: {
         prompt,
         system_prompt: systemPrompt,
-        max_new_tokens: 800,
+        max_tokens: 800,
         temperature: 1.0,
         top_p: 0.9,
         stop: ["<|im_end|>", "<|im_start|>"],
