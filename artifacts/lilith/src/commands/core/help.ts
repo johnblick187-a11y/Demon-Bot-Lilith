@@ -2,35 +2,44 @@ import { SlashCommandBuilder, EmbedBuilder, CommandInteraction } from "discord.j
 
 export const data = new SlashCommandBuilder()
   .setName("help")
-  .setDescription("Command information")
-  .addStringOption((opt) =>
-    opt.setName("command").setDescription("Specific command to look up").setRequired(false)
-  );
+  .setDescription("Command list");
 
 const COMMAND_LIST = `
-**⚙️ Core:** /status /diagnostics /help /mood /annoyance /affinity
+**👑 Owner Only**
+\`/diagnostics\` \`/unblacklist\` \`/override\`
 
-**🧠 AI:** /ask /task /tldr /nsfwtoggle /google
+**⚙️ Core**
+\`/status\` \`/help\` \`/mood\` \`/annoyance\` \`/affinity\` \`/enemy\` \`/changeprefix\`
 
-**😈 Interaction:** /punch /slap /bite /headbutt /stab /shoot /roast /pickup /ship /smash /blow
+**🧠 AI**
+\`/ask\` \`/task\` \`/tldr\` \`/google\` \`/nsfwtoggle\` \`/chattoggle\`
 
-**🚨 Moderation:** /ban /kick /warn /timeout /rename /makerole /editrole /deleterole /purge /channel /avatar /banner /info /autoreact /autoreply
+**😈 Interaction**
+\`/punch\` \`/slap\` \`/bite\` \`/headbutt\` \`/stab\` \`/shoot\` \`/roast\` \`/pickup\` \`/ship\` \`/smash\` \`/blow\`
 
-**🌿 Fun:** /hitsmeth /hitsweed /chugsdrink /popspill
+**🚨 Moderation**
+\`/ban\` \`/unban\` \`/kick\` \`/warn\` \`/timeout\` \`/purge\` \`/dm\`
+\`/channel\` \`/rename\` \`/makerole\` \`/editrole\` \`/deleterole\`
+\`/autoreact\` \`/autoreply\` \`/setlogchannel\`
+\`/stealemoji\` \`/stealsticker\` \`/avatar\` \`/banner\` \`/info\`
 
-**🎨 Generation:** /create /tts
+**🌿 Fun**
+\`/hitsmeth\` \`/hitsweed\` \`/chugsdrink\` \`/popspill\`
 
-**🎧 VC Core:** /join /leave
-**🎵 Music:** /play /pause /resume /skip /stop /queue
-**🔧 VC Mod:** /vcmove /vcmute /vcunmute /vcdeafen /vcundeafen
+**🎨 Generation**
+\`/create\` \`/generate\` \`/tts\`
+
+**🎧 Voice & Music**
+\`/join\` \`/leave\` \`/play\` \`/pause\` \`/resume\` \`/skip\` \`/stop\` \`/queue\`
+\`/vcmove\` \`/vcmute\` \`/vcunmute\` \`/vcdeafen\` \`/vcundeafen\`
 `;
 
 export async function execute(interaction: CommandInteraction) {
   const embed = new EmbedBuilder()
-    .setTitle("😈 Lilith — Command List")
+    .setTitle("😈 Lilith — Commands")
     .setColor(0x8b0000)
     .setDescription(COMMAND_LIST)
     .setFooter({ text: "Don't test me." });
 
-  await interaction.reply({ embeds: [embed], ephemeral: true });
+  await interaction.reply({ embeds: [embed], flags: 64 });
 }

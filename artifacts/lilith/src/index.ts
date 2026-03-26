@@ -280,12 +280,12 @@ async function registerCommands() {
     }
   }
 
-  // Also register globally so new guilds the bot joins pick them up
+  // Clear global commands so they don't duplicate guild commands in the picker
   try {
-    await rest.put(Routes.applicationCommands(appId), { body });
-    console.log(`Registered ${allCommandDefs.length} slash commands globally.`);
+    await rest.put(Routes.applicationCommands(appId), { body: [] });
+    console.log("Global commands cleared.");
   } catch (err) {
-    console.error("Failed to register global commands:", err);
+    console.error("Failed to clear global commands:", err);
   }
 }
 
