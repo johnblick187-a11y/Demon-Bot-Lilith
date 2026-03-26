@@ -367,6 +367,22 @@ export async function getLilithMoodData(): Promise<{ avgAnnoyance: number; enemy
   };
 }
 
+export async function getAllUserRelations(): Promise<{
+  user_id: string;
+  username: string;
+  affinity: number;
+  annoyance: number;
+  enemy: boolean;
+  blacklisted: boolean;
+}[]> {
+  const res = await pool.query(
+    `SELECT user_id, username, affinity, annoyance, enemy, blacklisted
+     FROM user_relations
+     ORDER BY (annoyance * 0.7 + GREATEST(0, -affinity) * 0.3) DESC`
+  );
+  return res.rows;
+}
+
 export async function getEnemies(): Promise<{ user_id: string; username: string }[]> {
   const res = await pool.query(
     `SELECT user_id, username FROM user_relations WHERE enemy = TRUE ORDER BY username`

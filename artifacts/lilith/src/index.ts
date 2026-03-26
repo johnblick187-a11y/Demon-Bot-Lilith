@@ -30,6 +30,7 @@ import * as enemy from "./commands/core/enemy.js";
 import * as memory from "./commands/core/memory.js";
 import * as dmmode from "./commands/core/dmmode.js";
 import * as personality from "./commands/core/personality.js";
+import * as mentalstate from "./commands/core/mentalstate.js";
 
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
@@ -155,6 +156,7 @@ const allCommandDefs: any[] = [
   memory.data,
   dmmode.data,
   personality.data,
+  mentalstate.data,
   ask.data,
   task.data,
   nsfwtoggle.data,
@@ -236,6 +238,7 @@ commandMap.set("enemy", (i) => enemy.execute(i));
 commandMap.set("memory", (i) => memory.execute(i));
 commandMap.set("dmmode", (i) => dmmode.execute(i));
 commandMap.set("personality", (i) => personality.execute(i));
+commandMap.set("mentalstate", (i) => mentalstate.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));

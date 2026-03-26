@@ -8,7 +8,7 @@ const COMMAND_LIST = `
 **👑 Owner Only**
 \`/diagnostics\` \`/override\` \`/unblacklist\` \`/memory\` \`/dm\`
 \`/stealemoji\` \`/stealsticker\` \`/stealsound\`
-\`/serverbackup\` \`/personality\`
+\`/serverbackup\` \`/personality\` \`/mentalstate\`
 
 **⚙️ Core**
 \`/status\` \`/help\` \`/mood\` \`/annoyance\` \`/affinity\`
