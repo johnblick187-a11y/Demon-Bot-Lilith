@@ -61,6 +61,7 @@ import * as channel from "./commands/moderation/channel.js";
 import * as info from "./commands/moderation/info.js";
 import { avatarData, executeAvatar, bannerData, executeBanner } from "./commands/moderation/avatar.js";
 import * as automod from "./commands/moderation/automod.js";
+import * as webhook from "./commands/moderation/webhook.js";
 import * as autoreact from "./commands/moderation/autoreact.js";
 import * as autoreply from "./commands/moderation/autoreply.js";
 import * as userreact from "./commands/moderation/userreact.js";
@@ -154,6 +155,7 @@ const allCommandDefs: any[] = [
   avatarData,
   bannerData,
   automod.data,
+  webhook.data,
   autoreact.data,
   autoreply.data,
   userreact.data,
@@ -221,6 +223,7 @@ commandMap.set("info", (i) => info.execute(i));
 commandMap.set("avatar", (i) => executeAvatar(i));
 commandMap.set("banner", (i) => executeBanner(i));
 commandMap.set("automod", (i) => automod.execute(i));
+commandMap.set("webhook", (i) => webhook.execute(i));
 commandMap.set("autoreact", (i) => autoreact.execute(i));
 commandMap.set("autoreply", (i) => autoreply.execute(i));
 commandMap.set("userreact", (i) => userreact.execute(i));
