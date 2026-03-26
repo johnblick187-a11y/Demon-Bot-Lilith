@@ -13,10 +13,14 @@ import {
   getUserAutoreacts,
   getUserAutoreplies,
   getConversationHistory,
+  getConversationSummaryRecord,
   saveConversationTurn,
+  getMessagesToSummarize,
+  saveConversationSummary,
+  deleteMessagesByIds,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
-import { askLilith, computeMode } from "../lib/ai.js";
+import { askLilith, computeMode, summarizeConversation } from "../lib/ai.js";
 
 export async function handleMessageCreate(message: Message, client: Client) {
   if (!message.guild) return;
@@ -104,7 +108,10 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
     try {
       await message.channel.sendTyping();
-      const history = await getConversationHistory(message.guild.id, userId);
+      const [history, summaryRecord] = await Promise.all([
+        getConversationHistory(message.guild.id, userId),
+        getConversationSummaryRecord(message.guild.id, userId),
+      ]);
       const response = await askLilith(query, {
         userId,
         username: message.author.username,
@@ -114,9 +121,23 @@ export async function handleMessageCreate(message: Message, client: Client) {
         mode: "chat",
         enemy: (rel as any).enemy ?? false,
         history,
+        memorySummary: summaryRecord?.summary ?? null,
       });
       await message.reply(response);
       await saveConversationTurn(message.guild.id, userId, query, response);
+
+      // Fire-and-forget: compress old messages into rolling summary
+      (async () => {
+        try {
+          const toSummarize = await getMessagesToSummarize(message.guild.id, userId);
+          if (!toSummarize || toSummarize.length === 0) return;
+          const existing = summaryRecord?.summary ?? null;
+          const newSummary = await summarizeConversation(existing, toSummarize);
+          const totalCovered = (summaryRecord?.messages_covered ?? 0) + toSummarize.length;
+          await saveConversationSummary(message.guild.id, userId, newSummary, totalCovered);
+          await deleteMessagesByIds(toSummarize.map((m) => m.id));
+        } catch {}
+      })();
     } catch {}
 
     if (!isOwner) {

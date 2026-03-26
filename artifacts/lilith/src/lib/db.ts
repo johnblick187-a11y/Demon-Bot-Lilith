@@ -71,6 +71,15 @@ export async function initDb() {
     CREATE INDEX IF NOT EXISTS idx_conv_hist_lookup
       ON conversation_history(guild_id, user_id, created_at DESC);
 
+    CREATE TABLE IF NOT EXISTS conversation_summaries (
+      guild_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      summary TEXT NOT NULL,
+      messages_covered INTEGER NOT NULL DEFAULT 0,
+      updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      PRIMARY KEY (guild_id, user_id)
+    );
+
     CREATE TABLE IF NOT EXISTS autoreplies (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -363,7 +372,10 @@ export async function getUserAutoreplies(guildId: string, userId: string) {
   return res.rows.map((r: { reply: string }) => r.reply);
 }
 
-const HISTORY_LIMIT = 30;
+// Number of most-recent messages kept verbatim in context
+export const VERBATIM_LIMIT = 20;
+// When total messages exceed this, older ones get summarized and pruned
+const SUMMARIZE_THRESHOLD = 30;
 
 export async function getConversationHistory(
   guildId: string,
@@ -377,9 +389,35 @@ export async function getConversationHistory(
        ORDER BY created_at DESC
        LIMIT $3
      ) sub ORDER BY created_at ASC`,
-    [guildId, userId, HISTORY_LIMIT]
+    [guildId, userId, VERBATIM_LIMIT]
   );
   return res.rows as { role: "user" | "assistant"; content: string }[];
+}
+
+export async function getConversationSummaryRecord(
+  guildId: string,
+  userId: string
+): Promise<{ summary: string; messages_covered: number } | null> {
+  const res = await pool.query(
+    `SELECT summary, messages_covered FROM conversation_summaries WHERE guild_id=$1 AND user_id=$2`,
+    [guildId, userId]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function saveConversationSummary(
+  guildId: string,
+  userId: string,
+  summary: string,
+  messagesCovered: number
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO conversation_summaries (guild_id, user_id, summary, messages_covered, updated_at)
+     VALUES ($1, $2, $3, $4, NOW())
+     ON CONFLICT (guild_id, user_id) DO UPDATE
+       SET summary=$3, messages_covered=$4, updated_at=NOW()`,
+    [guildId, userId, summary, messagesCovered]
+  );
 }
 
 export async function saveConversationTurn(
@@ -393,16 +431,35 @@ export async function saveConversationTurn(
      VALUES ($1, $2, 'user', $3), ($1, $2, 'assistant', $4)`,
     [guildId, userId, userMessage, assistantReply]
   );
-  await pool.query(
-    `DELETE FROM conversation_history
+}
+
+export async function getMessagesToSummarize(
+  guildId: string,
+  userId: string
+): Promise<{ id: number; role: string; content: string }[] | null> {
+  const countRes = await pool.query(
+    `SELECT COUNT(*) as total FROM conversation_history WHERE guild_id=$1 AND user_id=$2`,
+    [guildId, userId]
+  );
+  const total = parseInt(countRes.rows[0].total, 10);
+  if (total <= SUMMARIZE_THRESHOLD) return null;
+
+  const toSummarize = total - VERBATIM_LIMIT;
+  const res = await pool.query(
+    `SELECT id, role, content FROM conversation_history
      WHERE guild_id=$1 AND user_id=$2
-       AND id NOT IN (
-         SELECT id FROM conversation_history
-         WHERE guild_id=$1 AND user_id=$2
-         ORDER BY created_at DESC
-         LIMIT $3
-       )`,
-    [guildId, userId, HISTORY_LIMIT]
+     ORDER BY created_at ASC
+     LIMIT $3`,
+    [guildId, userId, toSummarize]
+  );
+  return res.rows;
+}
+
+export async function deleteMessagesByIds(ids: number[]): Promise<void> {
+  if (ids.length === 0) return;
+  await pool.query(
+    `DELETE FROM conversation_history WHERE id = ANY($1)`,
+    [ids]
   );
 }
 
@@ -410,6 +467,10 @@ export async function clearConversationHistory(
   guildId: string,
   userId: string
 ): Promise<number> {
+  await pool.query(
+    `DELETE FROM conversation_summaries WHERE guild_id=$1 AND user_id=$2`,
+    [guildId, userId]
+  );
   const res = await pool.query(
     `DELETE FROM conversation_history WHERE guild_id=$1 AND user_id=$2`,
     [guildId, userId]
@@ -417,7 +478,7 @@ export async function clearConversationHistory(
   return res.rowCount ?? 0;
 }
 
-export async function getConversationSummary(
+export async function getFullConversationLog(
   guildId: string,
   userId: string
 ): Promise<{ role: string; content: string; created_at: Date }[]> {

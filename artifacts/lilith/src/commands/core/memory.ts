@@ -1,7 +1,8 @@
 import { SlashCommandBuilder, CommandInteraction, EmbedBuilder } from "discord.js";
 import {
   clearConversationHistory,
-  getConversationSummary,
+  getFullConversationLog,
+  getConversationSummaryRecord,
 } from "../../lib/db.js";
 import { OWNER_ID } from "../../lib/constants.js";
 
@@ -37,27 +38,40 @@ export async function execute(interaction: CommandInteraction) {
   const targetUser = (interaction.options as any).getUser("user") ?? interaction.user;
 
   if (sub === "view") {
-    const rows = await getConversationSummary(interaction.guildId, targetUser.id);
+    const [rows, summaryRecord] = await Promise.all([
+      getFullConversationLog(interaction.guildId, targetUser.id),
+      getConversationSummaryRecord(interaction.guildId, targetUser.id),
+    ]);
 
-    if (rows.length === 0) {
+    if (rows.length === 0 && !summaryRecord) {
       return interaction.reply({
         content: `No memory stored for **${targetUser.username}** in this server.`,
         flags: 64,
       });
     }
 
-    const lines = rows.map((r) => {
-      const ts = new Date(r.created_at).toLocaleString("en-US", {
-        month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
-      });
-      const label = r.role === "user" ? "**Them:**" : "**Lilith:**";
-      const snippet = r.content.length > 120 ? r.content.slice(0, 120) + "…" : r.content;
-      return `\`${ts}\` ${label} ${snippet}`;
-    });
+    const parts: string[] = [];
 
+    if (summaryRecord) {
+      parts.push(`**📝 Compressed Memory** *(covers ${summaryRecord.messages_covered} older messages)*\n${summaryRecord.summary}`);
+    }
+
+    if (rows.length > 0) {
+      const lines = rows.map((r) => {
+        const ts = new Date(r.created_at).toLocaleString("en-US", {
+          month: "short", day: "numeric", hour: "2-digit", minute: "2-digit",
+        });
+        const label = r.role === "user" ? "**Them:**" : "**Lilith:**";
+        const snippet = r.content.length > 120 ? r.content.slice(0, 120) + "…" : r.content;
+        return `\`${ts}\` ${label} ${snippet}`;
+      });
+      parts.push(`**💬 Recent Messages** *(${rows.length} verbatim)*\n${lines.join("\n")}`);
+    }
+
+    const fullText = parts.join("\n\n");
     const chunks: string[] = [];
     let current = "";
-    for (const line of lines) {
+    for (const line of fullText.split("\n")) {
       if ((current + line + "\n").length > 1900) {
         chunks.push(current);
         current = "";
@@ -68,9 +82,11 @@ export async function execute(interaction: CommandInteraction) {
 
     const embed = new EmbedBuilder()
       .setTitle(`Lilith's memory of ${targetUser.username}`)
-      .setDescription(chunks[0])
+      .setDescription(chunks[0].slice(0, 4096))
       .setColor(0x9b59b6)
-      .setFooter({ text: `${rows.length} messages stored` });
+      .setFooter({
+        text: `${summaryRecord ? summaryRecord.messages_covered + " archived + " : ""}${rows.length} recent messages`,
+      });
 
     await interaction.reply({ embeds: [embed], flags: 64 });
     for (let i = 1; i < chunks.length; i++) {

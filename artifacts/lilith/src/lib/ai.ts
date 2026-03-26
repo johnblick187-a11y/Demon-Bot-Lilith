@@ -13,6 +13,31 @@ export function computeMode(affinity: number, annoyance: number, isEnemy: boolea
   return "default";
 }
 
+export async function summarizeConversation(
+  existingSummary: string | null,
+  messages: { role: string; content: string }[]
+): Promise<string> {
+  const messageText = messages
+    .map((m) => `${m.role === "user" ? "User" : "Lilith"}: ${m.content}`)
+    .join("\n");
+
+  const prompt = existingSummary
+    ? `You are maintaining a memory summary of a user's ongoing conversations with Lilith, a sharp-tongued AI Discord bot.\n\nExisting memory summary:\n${existingSummary}\n\nNew messages to incorporate:\n${messageText}\n\nUpdate the memory summary to include the new information. Keep it concise (under 300 words). Write in third person about the user. Focus on: topics discussed, user's personality and behavior, things they've asked for, notable moments, any recurring themes or facts about them.`
+    : `You are building a memory summary of a user's conversation with Lilith, a sharp-tongued AI Discord bot.\n\nConversation:\n${messageText}\n\nWrite a concise memory summary (under 300 words) in third person about the user. Capture: topics discussed, their personality and behavior, things they've asked for, notable moments, any facts about them.`;
+
+  try {
+    const response = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      max_tokens: 400,
+      temperature: 0.3,
+    });
+    return response.choices[0]?.message?.content ?? existingSummary ?? "";
+  } catch {
+    return existingSummary ?? "";
+  }
+}
+
 export async function askLilith(
   userMessage: string,
   context: {
@@ -24,6 +49,7 @@ export async function askLilith(
     enemy?: boolean;
     mode?: "task" | "chat";
     history?: { role: "user" | "assistant"; content: string }[];
+    memorySummary?: string | null;
   }
 ): Promise<string> {
   const affinityDesc =
@@ -61,6 +87,10 @@ export async function askLilith(
       ? " You are in focused execution mode — be more direct and actionable, but still in character."
       : "";
 
+  const memoryNote = context.memorySummary
+    ? `\n\n[MEMORY — what you know about this user from past conversations]:\n${context.memorySummary}`
+    : "";
+
   const historyMessages: OpenAI.Chat.ChatCompletionMessageParam[] = (context.history ?? []).map(
     (h) => ({ role: h.role, content: h.content })
   );
@@ -71,7 +101,7 @@ export async function askLilith(
       messages: [
         {
           role: "system",
-          content: LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote,
+          content: LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote + memoryNote,
         },
         ...historyMessages,
         {
