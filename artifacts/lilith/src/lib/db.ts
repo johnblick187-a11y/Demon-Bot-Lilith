@@ -59,6 +59,18 @@ export async function initDb() {
       UNIQUE(guild_id, user_id, reply)
     );
 
+    CREATE TABLE IF NOT EXISTS conversation_history (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      role TEXT NOT NULL,
+      content TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_conv_hist_lookup
+      ON conversation_history(guild_id, user_id, created_at DESC);
+
     CREATE TABLE IF NOT EXISTS autoreplies (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -349,6 +361,73 @@ export async function getUserAutoreplies(guildId: string, userId: string) {
     [guildId, userId]
   );
   return res.rows.map((r: { reply: string }) => r.reply);
+}
+
+const HISTORY_LIMIT = 30;
+
+export async function getConversationHistory(
+  guildId: string,
+  userId: string
+): Promise<{ role: "user" | "assistant"; content: string }[]> {
+  const res = await pool.query(
+    `SELECT role, content FROM (
+       SELECT role, content, created_at
+       FROM conversation_history
+       WHERE guild_id=$1 AND user_id=$2
+       ORDER BY created_at DESC
+       LIMIT $3
+     ) sub ORDER BY created_at ASC`,
+    [guildId, userId, HISTORY_LIMIT]
+  );
+  return res.rows as { role: "user" | "assistant"; content: string }[];
+}
+
+export async function saveConversationTurn(
+  guildId: string,
+  userId: string,
+  userMessage: string,
+  assistantReply: string
+): Promise<void> {
+  await pool.query(
+    `INSERT INTO conversation_history (guild_id, user_id, role, content)
+     VALUES ($1, $2, 'user', $3), ($1, $2, 'assistant', $4)`,
+    [guildId, userId, userMessage, assistantReply]
+  );
+  await pool.query(
+    `DELETE FROM conversation_history
+     WHERE guild_id=$1 AND user_id=$2
+       AND id NOT IN (
+         SELECT id FROM conversation_history
+         WHERE guild_id=$1 AND user_id=$2
+         ORDER BY created_at DESC
+         LIMIT $3
+       )`,
+    [guildId, userId, HISTORY_LIMIT]
+  );
+}
+
+export async function clearConversationHistory(
+  guildId: string,
+  userId: string
+): Promise<number> {
+  const res = await pool.query(
+    `DELETE FROM conversation_history WHERE guild_id=$1 AND user_id=$2`,
+    [guildId, userId]
+  );
+  return res.rowCount ?? 0;
+}
+
+export async function getConversationSummary(
+  guildId: string,
+  userId: string
+): Promise<{ role: string; content: string; created_at: Date }[]> {
+  const res = await pool.query(
+    `SELECT role, content, created_at FROM conversation_history
+     WHERE guild_id=$1 AND user_id=$2
+     ORDER BY created_at ASC`,
+    [guildId, userId]
+  );
+  return res.rows;
 }
 
 export async function removeAutoreact(guildId: string, trigger: string): Promise<boolean> {

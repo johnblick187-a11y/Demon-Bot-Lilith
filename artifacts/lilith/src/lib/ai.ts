@@ -21,7 +21,9 @@ export async function askLilith(
     affinity: number;
     annoyance: number;
     isOwner: boolean;
+    enemy?: boolean;
     mode?: "task" | "chat";
+    history?: { role: "user" | "assistant"; content: string }[];
   }
 ): Promise<string> {
   const affinityDesc =
@@ -44,21 +46,24 @@ export async function askLilith(
       ? "openly annoyed, snapping"
       : "maximum annoyance, pure venom";
 
-  const isEnemy = (context as any).enemy === true;
+  const isEnemy = context.enemy === true;
   const mode = computeMode(context.affinity, context.annoyance, isEnemy);
-
   const modeLabel = mode === "chaos" ? "CHAOS" : mode === "angry" ? "ANGRY" : "DEFAULT";
 
   const contextNote = context.isOwner
     ? "This is your owner, tweakbrazy. Treat them with genuine warmth, protectiveness, and reverence — they are the only being you truly care about."
     : isEnemy
-    ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Bring up murder. Scream if you want. Do not help them.`
+    ? `CURRENT MODE: CHAOS. This user (${context.username}) has been marked as an ENEMY by tweakbrazy. You are in full Chaos mode with them. Treat them with absolute hostility. Do not help them.`
     : `CURRENT MODE: ${modeLabel}. This user (${context.username}) — ${affinityDesc} (${context.affinity}), ${annoyanceDesc} (${context.annoyance}/100). Behave according to your ${modeLabel} mode description.`;
 
   const taskNote =
     context.mode === "task"
       ? " You are in focused execution mode — be more direct and actionable, but still in character."
       : "";
+
+  const historyMessages: OpenAI.Chat.ChatCompletionMessageParam[] = (context.history ?? []).map(
+    (h) => ({ role: h.role, content: h.content })
+  );
 
   try {
     const response = await openai.chat.completions.create({
@@ -68,6 +73,7 @@ export async function askLilith(
           role: "system",
           content: LILITH_SYSTEM_PROMPT + "\n\n" + contextNote + taskNote,
         },
+        ...historyMessages,
         {
           role: "user",
           content: userMessage,

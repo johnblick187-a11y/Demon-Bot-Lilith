@@ -12,6 +12,8 @@ import {
   getChatEnabled,
   getUserAutoreacts,
   getUserAutoreplies,
+  getConversationHistory,
+  saveConversationTurn,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE } from "../lib/constants.js";
 import { askLilith, computeMode } from "../lib/ai.js";
@@ -102,6 +104,7 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
     try {
       await message.channel.sendTyping();
+      const history = await getConversationHistory(message.guild.id, userId);
       const response = await askLilith(query, {
         userId,
         username: message.author.username,
@@ -110,8 +113,10 @@ export async function handleMessageCreate(message: Message, client: Client) {
         isOwner,
         mode: "chat",
         enemy: (rel as any).enemy ?? false,
-      } as any);
+        history,
+      });
       await message.reply(response);
+      await saveConversationTurn(message.guild.id, userId, query, response);
     } catch {}
 
     if (!isOwner) {
