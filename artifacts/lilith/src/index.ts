@@ -31,6 +31,9 @@ import * as memory from "./commands/core/memory.js";
 import * as dmmode from "./commands/core/dmmode.js";
 import * as temperament from "./commands/core/temperament.js";
 import * as mentalstate from "./commands/core/mentalstate.js";
+import * as setannoyance from "./commands/core/setannoyance.js";
+import * as setaffinity from "./commands/core/setaffinity.js";
+import * as modeCmd from "./commands/core/mode.js";
 
 import * as ask from "./commands/ai/ask.js";
 import * as task from "./commands/ai/task.js";
@@ -157,6 +160,9 @@ const allCommandDefs: any[] = [
   dmmode.data,
   temperament.data,
   mentalstate.data,
+  setannoyance.data,
+  setaffinity.data,
+  modeCmd.data,
   ask.data,
   task.data,
   nsfwtoggle.data,
@@ -239,6 +245,9 @@ commandMap.set("memory", (i) => memory.execute(i));
 commandMap.set("dmmode", (i) => dmmode.execute(i));
 commandMap.set("temperament", (i) => temperament.execute(i));
 commandMap.set("mentalstate", (i) => mentalstate.execute(i));
+commandMap.set("setannoyance", (i) => setannoyance.execute(i));
+commandMap.set("setaffinity", (i) => setaffinity.execute(i));
+commandMap.set("mode", (i) => modeCmd.execute(i));
 commandMap.set("ask", (i) => ask.execute(i));
 commandMap.set("task", (i) => task.execute(i));
 commandMap.set("nsfwtoggle", (i) => nsfwtoggle.execute(i));
