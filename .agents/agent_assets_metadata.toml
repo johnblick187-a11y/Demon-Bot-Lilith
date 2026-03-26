@@ -114,3 +114,9 @@ id = "qFKuuwRM_pbUPpxIM_B6w"
 uri = "file://attached_assets/generated_images/lilith_v2_meth5.png"
 type = "image"
 title = "Lilith — Meth Pipe (smaller bubble)"
+
+[[outputs]]
+id = "e0JcYyTkqabdVM-EMueJP"
+uri = "file://attached_assets/generated_images/lilith_v2_meth6.png"
+type = "image"
+title = "Lilith — Meth Pipe"
