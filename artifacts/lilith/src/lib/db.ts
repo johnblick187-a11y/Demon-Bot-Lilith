@@ -75,6 +75,14 @@ export async function initDb() {
       still_in_server BOOLEAN NOT NULL DEFAULT TRUE
     );
 
+    CREATE TABLE IF NOT EXISTS server_backups (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      name TEXT NOT NULL,
+      created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      data JSONB NOT NULL
+    );
+
     CREATE TABLE IF NOT EXISTS reaction_roles (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -987,6 +995,40 @@ export async function resetUserXp(guildId: string, userId: string) {
 
 export async function resetAllXp(guildId: string) {
   await pool.query(`DELETE FROM user_levels WHERE guild_id = $1`, [guildId]);
+}
+
+// ─── Server Backups ──────────────────────────────────────────────────────────
+
+export async function saveServerBackup(guildId: string, name: string, data: object): Promise<number> {
+  const res = await pool.query(
+    `INSERT INTO server_backups (guild_id, name, data) VALUES ($1, $2, $3) RETURNING id`,
+    [guildId, name, JSON.stringify(data)]
+  );
+  return res.rows[0].id;
+}
+
+export async function listServerBackups(guildId: string) {
+  const res = await pool.query(
+    `SELECT id, name, created_at FROM server_backups WHERE guild_id = $1 ORDER BY created_at DESC`,
+    [guildId]
+  );
+  return res.rows;
+}
+
+export async function getServerBackup(guildId: string, id: number) {
+  const res = await pool.query(
+    `SELECT id, name, created_at, data FROM server_backups WHERE guild_id = $1 AND id = $2`,
+    [guildId, id]
+  );
+  return res.rows[0] ?? null;
+}
+
+export async function deleteServerBackup(guildId: string, id: number): Promise<boolean> {
+  const res = await pool.query(
+    `DELETE FROM server_backups WHERE guild_id = $1 AND id = $2 RETURNING id`,
+    [guildId, id]
+  );
+  return res.rowCount! > 0;
 }
 
 // ─── Invite Tracking ─────────────────────────────────────────────────────────
