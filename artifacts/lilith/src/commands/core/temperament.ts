@@ -17,8 +17,8 @@ export const data = new SlashCommandBuilder()
   )
   .setDefaultMemberPermissions(0n);
 
-const MODE_RESPONSES: Record<LilithMode, string> = {
-  default: "Back to my natural state. Don't mistake this for softness.",
+const MODE_RESPONSES: Record<string, string> = {
+  natural: "Back to my natural state. Don't mistake this for softness.",
   chaos: "CHAOS MODE. I HAVE BEEN WAITING FOR THIS. I HAVE BEEN SO PATIENT. NOT ANYMORE.",
 };
 
@@ -27,19 +27,23 @@ export async function execute(interaction: CommandInteraction) {
     return interaction.reply({ content: "You don't have that authority.", flags: 64 });
   }
 
-  const mode = (interaction.options as any).getString("mode", true) as LilithMode;
+  const raw = (interaction.options as any).getString("mode", true) as LilithMode;
+  // "Normal" means clear the forced mode → natural affinity/annoyance-driven behavior
+  const newForced: LilithMode | null = raw === "default" ? null : raw;
   const current = getForcedPersonality();
 
-  if (current === mode) {
+  if (current === newForced) {
+    const label = newForced === null ? "natural" : newForced;
     return interaction.reply({
-      content: `Already in **${mode}** mode. Pay attention.`,
+      content: `Already in **${label}** mode. Pay attention.`,
       flags: 64,
     });
   }
 
-  setForcedPersonality(mode);
+  setForcedPersonality(newForced);
 
+  const responseKey = newForced === null ? "natural" : newForced;
   await interaction.reply({
-    content: MODE_RESPONSES[mode],
+    content: MODE_RESPONSES[responseKey] ?? "Done.",
   });
 }

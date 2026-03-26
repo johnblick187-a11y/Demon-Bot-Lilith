@@ -14,14 +14,7 @@ function rageScore(affinity: number, annoyance: number): number {
 
 function modeIcon(mode: LilithMode): string {
   if (mode === "chaos") return "🔥";
-  if (mode === "angry") return "😤";
   return "😑";
-}
-
-function modeLabel(mode: LilithMode): string {
-  if (mode === "chaos") return "CHAOS";
-  if (mode === "angry") return "ANGRY";
-  return "DEFAULT";
 }
 
 export async function execute(interaction: CommandInteraction) {
