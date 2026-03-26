@@ -152,8 +152,8 @@ export async function askLilithNsfw(
   prompt += `<|im_start|>user\n${userMessage}\n<|im_end|>\n<|im_start|>assistant\n`;
 
   try {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const output = await replicate.run("nousresearch/nous-hermes-2-mixtral-8x7b-dpo" as any, {
+    const modelRef = "nousresearch/nous-hermes-2-mixtral-8x7b-dpo" as `${string}/${string}`;
+    const output = await replicate.run(modelRef, {
       input: {
         prompt,
         system_prompt: systemPrompt,
@@ -166,11 +166,11 @@ export async function askLilithNsfw(
 
     let text: string;
     if (Array.isArray(output)) {
-      text = (output as string[]).join("");
+      text = output.filter((x): x is string => typeof x === "string").join("");
     } else if (typeof output === "string") {
       text = output;
     } else {
-      text = String(output ?? "");
+      text = "";
     }
 
     return text.trim() || "...";
