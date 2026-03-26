@@ -43,6 +43,14 @@ export async function initDb() {
       emoji TEXT NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS user_autoreacts (
+      id SERIAL PRIMARY KEY,
+      guild_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      emoji TEXT NOT NULL,
+      UNIQUE(guild_id, user_id, emoji)
+    );
+
     CREATE TABLE IF NOT EXISTS autoreplies (
       id SERIAL PRIMARY KEY,
       guild_id TEXT NOT NULL,
@@ -317,6 +325,14 @@ export async function addAutoreact(guildId: string, trigger: string, emoji: stri
 export async function getAutoreacts(guildId: string) {
   const res = await pool.query(`SELECT * FROM autoreacts WHERE guild_id=$1`, [guildId]);
   return res.rows as { id: number; guild_id: string; trigger: string; emoji: string }[];
+}
+
+export async function getUserAutoreacts(guildId: string, userId: string) {
+  const res = await pool.query(
+    `SELECT emoji FROM user_autoreacts WHERE guild_id=$1 AND user_id=$2`,
+    [guildId, userId]
+  );
+  return res.rows.map((r: { emoji: string }) => r.emoji);
 }
 
 export async function removeAutoreact(guildId: string, trigger: string): Promise<boolean> {

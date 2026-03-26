@@ -61,6 +61,7 @@ import * as info from "./commands/moderation/info.js";
 import { avatarData, executeAvatar, bannerData, executeBanner } from "./commands/moderation/avatar.js";
 import * as autoreact from "./commands/moderation/autoreact.js";
 import * as autoreply from "./commands/moderation/autoreply.js";
+import * as userreact from "./commands/moderation/userreact.js";
 import * as stealemoji from "./commands/moderation/stealemoji.js";
 import * as stealsticker from "./commands/moderation/stealsticker.js";
 
@@ -149,6 +150,7 @@ const allCommandDefs: any[] = [
   bannerData,
   autoreact.data,
   autoreply.data,
+  userreact.data,
   stealemoji.data,
   stealsticker.data,
   hitsmethData,
@@ -211,6 +213,7 @@ commandMap.set("avatar", (i) => executeAvatar(i));
 commandMap.set("banner", (i) => executeBanner(i));
 commandMap.set("autoreact", (i) => autoreact.execute(i));
 commandMap.set("autoreply", (i) => autoreply.execute(i));
+commandMap.set("userreact", (i) => userreact.execute(i));
 commandMap.set("stealemoji", (i) => stealemoji.execute(i));
 commandMap.set("stealsticker", (i) => stealsticker.execute(i));
 commandMap.set("hitsmeth", (i) => executeHitsmeth(i));
