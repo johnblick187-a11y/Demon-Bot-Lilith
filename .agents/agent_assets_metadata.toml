@@ -150,3 +150,9 @@ id = "pnPI0xodx6SzkwK4m1lFh"
 uri = "file://attached_assets/generated_images/lilith_pipe_v3.png"
 type = "image"
 title = "Lilith — Meth Pipe"
+
+[[outputs]]
+id = "o6tXicJ-TNCIbOt6SIfrA"
+uri = "file://attached_assets/generated_images/lilith_no_funnel.png"
+type = "image"
+title = "Lilith — Funnel Removed"
