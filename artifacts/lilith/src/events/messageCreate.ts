@@ -30,11 +30,28 @@ import {
   getLilithMoodData,
 } from "../lib/db.js";
 import { OWNER_ID, BOT_MULTIPLIER, AFFINITY_TABLE, DRUG_RESPONSES } from "../lib/constants.js";
-import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS, setOwnerBypassSuspended, getOwnerBypassSuspended } from "../lib/ai.js";
+import { askLilith, askLilithNsfw, computeMode, summarizeConversation, generateTTS, setOwnerBypassSuspended, getOwnerBypassSuspended, assessMentalStateDelta } from "../lib/ai.js";
 import { runAutomod } from "../lib/automod.js";
 import { randomXp, isOnCooldown, computeLevel } from "../lib/xp.js";
 
 const recentlyProcessed = new Set<string>();
+
+// Mental state: track recent message timestamps per user per guild for spam detection
+const userMessageTimestamps = new Map<string, number[]>();
+
+function trackAndCheckSpam(guildId: string, userId: string): number {
+  const key = `${guildId}:${userId}`;
+  const now = Date.now();
+  const timestamps = userMessageTimestamps.get(key) ?? [];
+  // Keep only messages from the last 30 seconds
+  const recent = timestamps.filter((t) => now - t < 30_000);
+  recent.push(now);
+  userMessageTimestamps.set(key, recent);
+  // 4+ messages in 30s = spamming → return annoyance delta
+  if (recent.length >= 6) return 8;
+  if (recent.length >= 4) return 4;
+  return 0;
+}
 
 export async function handleMessageCreate(message: Message, client: Client) {
   if (recentlyProcessed.has(message.id)) return;
@@ -285,6 +302,24 @@ export async function handleMessageCreate(message: Message, client: Client) {
   const content = message.content;
   const contentLower = content.toLowerCase();
 
+  // Mental state: track spam + owner disrespect for ALL non-owner messages
+  if (userId !== OWNER_ID) {
+    (async () => {
+      try {
+        const spamDelta = trackAndCheckSpam(message.guild.id, userId);
+        if (spamDelta > 0) {
+          await updateRelation(userId, { annoyance: spamDelta });
+        }
+        // Heuristic: disrespect toward owner in any message
+        const ownerTerms = ["tweakbrazy", "king tweak"];
+        const disrespectTerms = ["fuck", "shit", "bitch", "idiot", "stupid", "trash", "hate", "kill", "shut up", "stfu", "loser", "ugly"];
+        if (ownerTerms.some((t) => contentLower.includes(t)) && disrespectTerms.some((t) => contentLower.includes(t))) {
+          await updateRelation(userId, { annoyance: 15 });
+        }
+      } catch {}
+    })();
+  }
+
   const [reacts, replies, guildPrefix, userPrefix, allCommands, userEmojis, userReplies] = await Promise.all([
     getAutoreacts(message.guild.id),
     getAutoreplies(message.guild.id),
@@ -432,6 +467,13 @@ export async function handleMessageCreate(message: Message, client: Client) {
 
     if (!isOwner) {
       await updateRelation(userId, { affinity: AFFINITY_TABLE.mention });
+      // Mental state: assess the message async and increment annoyance if warranted
+      (async () => {
+        try {
+          const delta = await assessMentalStateDelta(query);
+          if (delta > 0) await updateRelation(userId, { annoyance: delta });
+        } catch {}
+      })();
     }
     return;
   }

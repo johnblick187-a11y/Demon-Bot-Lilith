@@ -12,7 +12,6 @@ export const data = new SlashCommandBuilder()
       .setRequired(true)
       .addChoices(
         { name: "Normal", value: "default" },
-        { name: "Angry", value: "angry" },
         { name: "Chaos", value: "chaos" }
       )
   )
@@ -20,7 +19,6 @@ export const data = new SlashCommandBuilder()
 
 const MODE_RESPONSES: Record<LilithMode, string> = {
   default: "Back to my natural state. Don't mistake this for softness.",
-  angry: "Fine. Angry mode. As if I needed a reason.",
   chaos: "CHAOS MODE. I HAVE BEEN WAITING FOR THIS. I HAVE BEEN SO PATIENT. NOT ANYMORE.",
 };
 
